@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Mail, MapPin } from "lucide-react";
 import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 
@@ -18,24 +17,24 @@ export function SiteFooter() {
           <h4 className="font-display text-lg text-or-300">Navigation</h4>
           <ul className="mt-3 space-y-2 text-sm">
             <li>
-              <Link href="/" className="hover:text-or-300">
+              <a href="#hero" className="hover:text-or-300">
                 Accueil
-              </Link>
+              </a>
             </li>
             <li>
-              <Link href="/prestations" className="hover:text-or-300">
+              <a href="#prestations" className="hover:text-or-300">
                 Prestations
-              </Link>
+              </a>
             </li>
             <li>
-              <Link href="/galerie" className="hover:text-or-300">
+              <a href="#galerie" className="hover:text-or-300">
                 Galerie
-              </Link>
+              </a>
             </li>
             <li>
-              <Link href="/contact" className="hover:text-or-300">
-                Contact & Réservation
-              </Link>
+              <a href="#reserver" className="hover:text-or-300">
+                Réserver
+              </a>
             </li>
           </ul>
         </div>
