@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bordeaux-50: #fbf3f5;
+  --color-bordeaux-100: #f6e1e6;
+  --color-bordeaux-200: #ecc1cc;
+  --color-bordeaux-300: #dc94a7;
+  --color-bordeaux-400: #c66880;
+  --color-bordeaux-500: #a94666;
+  --color-bordeaux-600: #8c2f4f;
+  --color-bordeaux-700: #6e1f3c;
+  --color-bordeaux-800: #4a0e1f;
+  --color-bordeaux-900: #340915;
+  --color-bordeaux-950: #1f050d;
+
+  --color-or-50: #fbf8ec;
+  --color-or-100: #f6efcd;
+  --color-or-200: #ecdd9a;
+  --color-or-300: #e0c66a;
+  --color-or-400: #d4af3f;
+  --color-or-500: #c9a961;
+  --color-or-600: #b18d3a;
+  --color-or-700: #8a6c2c;
+  --color-or-800: #5e4a1f;
+  --color-or-900: #3a2d12;
+
+  --color-cream: #fbf6ef;
+  --color-ivoire: #f6efe1;
+
+  --font-display: var(--font-playfair);
+  --font-sans: var(--font-inter);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbf6ef;
+  --foreground: #1f050d;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--color-or-200);
+  color: var(--color-bordeaux-900);
 }
