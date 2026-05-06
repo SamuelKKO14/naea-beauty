@@ -181,17 +181,20 @@ html {
 }
 
 .animate-mesh-1 {
-  animation: mesh-drift-1 20s ease-in-out infinite;
+  animation: mesh-drift-1 35s ease-in-out infinite;
 }
 .animate-mesh-2 {
-  animation: mesh-drift-2 25s ease-in-out infinite;
+  animation: mesh-drift-2 40s ease-in-out infinite;
 }
 .animate-mesh-3 {
-  animation: mesh-drift-3 22s ease-in-out infinite;
+  animation: mesh-drift-3 32s ease-in-out infinite;
 }
 .animate-mesh-4 {
-  animation: mesh-drift-4 18s ease-in-out infinite;
+  animation: mesh-drift-4 38s ease-in-out infinite;
 }
 .animate-mesh-5 {
-  animation: mesh-drift-5 24s ease-in-out infinite;
+  animation: mesh-drift-5 36s ease-in-out infinite;
+}
+.animate-mesh-6 {
+  animation: mesh-drift-1 30s ease-in-out infinite reverse;
 }

@@ -51,58 +51,32 @@ export function ReservationForm() {
       </h3>
 
       {/* Prestation */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-bordeaux-900">
-          Prestation souhaitée <span className="text-or-700">*</span>
-        </label>
-        <select
-          name="service"
-          required
-          defaultValue=""
-          className="w-full rounded-lg border border-bordeaux-100 bg-cream px-4 py-3 text-bordeaux-900 outline-none transition-colors focus:border-bordeaux-400 focus:bg-white"
-        >
-          <option value="" disabled>
-            Choisir une prestation
+      <FloatingSelect
+        name="service"
+        label="Prestation souhaitée"
+        required
+      >
+        <option value="" disabled>
+          Choisir une prestation
+        </option>
+        {SERVICES.map((s) => (
+          <option key={s.id} value={s.name}>
+            {s.name} — {s.price} €
           </option>
-          {SERVICES.map((s) => (
-            <option key={s.id} value={s.name}>
-              {s.name} — {s.price} €
-            </option>
-          ))}
-        </select>
-      </div>
+        ))}
+      </FloatingSelect>
 
       {/* Date + Créneau */}
       <div className="grid gap-5 md:grid-cols-2">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-bordeaux-900">
-            Date souhaitée <span className="text-or-700">*</span>
-          </label>
-          <input
-            type="date"
-            name="date"
-            required
-            className="w-full rounded-lg border border-bordeaux-100 bg-cream px-4 py-3 text-bordeaux-900 outline-none transition-colors focus:border-bordeaux-400 focus:bg-white"
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-bordeaux-900">
-            Créneau horaire préféré <span className="text-or-700">*</span>
-          </label>
-          <select
-            name="timeslot"
-            required
-            defaultValue=""
-            className="w-full rounded-lg border border-bordeaux-100 bg-cream px-4 py-3 text-bordeaux-900 outline-none transition-colors focus:border-bordeaux-400 focus:bg-white"
-          >
-            <option value="" disabled>
-              Choisir un créneau
-            </option>
-            <option value="matin">Matin (9h – 12h)</option>
-            <option value="apres-midi">Après-midi (13h – 17h)</option>
-            <option value="soir">Soir (17h – 20h)</option>
-          </select>
-        </div>
+        <FloatingInput name="date" label="Date souhaitée" type="date" required />
+        <FloatingSelect name="timeslot" label="Créneau horaire" required>
+          <option value="" disabled>
+            Choisir un créneau
+          </option>
+          <option value="matin">Matin (9h – 12h)</option>
+          <option value="apres-midi">Après-midi (13h – 17h)</option>
+          <option value="soir">Soir (17h – 20h)</option>
+        </FloatingSelect>
       </div>
 
       {/* Lieu */}
@@ -111,22 +85,22 @@ export function ReservationForm() {
           Lieu <span className="text-or-700">*</span>
         </legend>
         <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
-          <label className="flex items-center gap-2 text-sm text-bordeaux-900 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-bordeaux-900">
             <input
               type="radio"
               name="location"
               value="chez-naea"
               defaultChecked
-              className="accent-bordeaux-800"
+              className="accent-or-500"
             />
             Chez Naéa, Nantes
           </label>
-          <label className="flex items-center gap-2 text-sm text-bordeaux-900 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-bordeaux-900">
             <input
               type="radio"
               name="location"
               value="domicile"
-              className="accent-bordeaux-800"
+              className="accent-or-500"
             />
             À mon domicile
           </label>
@@ -135,53 +109,42 @@ export function ReservationForm() {
 
       {/* Prénom + Nom */}
       <div className="grid gap-5 md:grid-cols-2">
-        <Field name="firstName" label="Prénom" required />
-        <Field name="lastName" label="Nom" required />
+        <FloatingInput name="firstName" label="Prénom" required />
+        <FloatingInput name="lastName" label="Nom" required />
       </div>
 
       {/* Téléphone + Email */}
       <div className="grid gap-5 md:grid-cols-2">
-        <Field name="phone" label="Téléphone" type="tel" required />
-        <Field name="email" label="Email" type="email" required />
+        <FloatingInput name="phone" label="Téléphone" type="tel" required />
+        <FloatingInput name="email" label="Email" type="email" required />
       </div>
 
       {/* Mode de paiement */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-bordeaux-900">
-          Mode de paiement préféré
-        </label>
-        <select
-          name="payment"
-          defaultValue="especes"
-          className="w-full rounded-lg border border-bordeaux-100 bg-cream px-4 py-3 text-bordeaux-900 outline-none transition-colors focus:border-bordeaux-400 focus:bg-white"
-        >
-          <option value="especes">Espèces</option>
-          <option value="virement">Virement</option>
-          <option value="paypal">PayPal</option>
-        </select>
-      </div>
+      <FloatingSelect name="payment" label="Mode de paiement">
+        <option value="especes">Espèces</option>
+        <option value="virement">Virement</option>
+        <option value="paypal">PayPal</option>
+      </FloatingSelect>
 
       {/* Message */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-bordeaux-900">
-          Message complémentaire (optionnel)
-        </label>
-        <textarea
-          name="message"
-          rows={3}
-          placeholder="Précisez vos disponibilités, questions, attentes…"
-          className="w-full resize-none rounded-lg border border-bordeaux-100 bg-cream px-4 py-3 text-bordeaux-900 outline-none transition-colors focus:border-bordeaux-400 focus:bg-white"
-        />
-      </div>
+      <FloatingTextarea
+        name="message"
+        label="Message complémentaire (optionnel)"
+        rows={3}
+      />
 
-      {/* Submit */}
+      {/* Submit — shimmer doré */}
       <button
         type="submit"
         disabled={status === "loading"}
-        className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:bg-or-400 hover:shadow-xl hover:shadow-or-500/30 disabled:opacity-50"
+        className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:opacity-50"
       >
-        <Calendar size={16} />
-        {status === "loading" ? "Envoi…" : "Demander mon RDV"}
+        <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+        <span className="pointer-events-none absolute inset-0 rounded-full bg-or-300/0 transition-colors group-hover:bg-or-300/20" />
+        <Calendar size={16} className="relative z-10" />
+        <span className="relative z-10">
+          {status === "loading" ? "Envoi…" : "Demander mon RDV"}
+        </span>
       </button>
 
       <p className="text-center text-sm text-bordeaux-900/60">
@@ -198,7 +161,8 @@ export function ReservationForm() {
   );
 }
 
-function Field({
+/* ── Floating Input ────────────────────────────────────── */
+function FloatingInput({
   name,
   label,
   type = "text",
@@ -209,17 +173,124 @@ function Field({
   type?: string;
   required?: boolean;
 }) {
+  const [focused, setFocused] = useState(false);
+  const [filled, setFilled] = useState(type === "date");
+
   return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-bordeaux-900">
-        {label} {required && <span className="text-or-700">*</span>}
-      </label>
+    <div className="group relative">
       <input
         name={name}
         type={type}
         required={required}
-        className="w-full rounded-lg border border-bordeaux-100 bg-cream px-4 py-3 text-bordeaux-900 outline-none transition-colors focus:border-bordeaux-400 focus:bg-white"
+        onFocus={() => setFocused(true)}
+        onBlur={(e) => {
+          setFocused(false);
+          setFilled(e.target.value.length > 0 || type === "date");
+        }}
+        placeholder=" "
+        className="peer w-full rounded-xl border border-bordeaux-200/60 bg-white/60 px-4 pb-2.5 pt-6 text-bordeaux-900 outline-none backdrop-blur-sm transition-all duration-300 focus:border-or-400 focus:bg-white/80 focus:shadow-[0_0_0_3px_rgba(201,168,76,0.15)]"
       />
+      <label
+        className={`pointer-events-none absolute left-4 transition-all duration-300 ${
+          focused || filled
+            ? "top-2 text-[10px] font-semibold text-or-600"
+            : "top-4 text-sm text-bordeaux-500"
+        }`}
+      >
+        {label} {required && <span className="text-or-700">*</span>}
+      </label>
+    </div>
+  );
+}
+
+/* ── Floating Select ───────────────────────────────────── */
+function FloatingSelect({
+  name,
+  label,
+  required = false,
+  children,
+}: {
+  name: string;
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [filled, setFilled] = useState(false);
+
+  return (
+    <div className="group relative">
+      <select
+        name={name}
+        required={required}
+        defaultValue=""
+        onFocus={() => setFocused(true)}
+        onBlur={(e) => {
+          setFocused(false);
+          setFilled(e.target.value.length > 0);
+        }}
+        onChange={(e) => setFilled(e.target.value.length > 0)}
+        className="peer w-full appearance-none rounded-xl border border-bordeaux-200/60 bg-white/60 px-4 pb-2.5 pt-6 text-bordeaux-900 outline-none backdrop-blur-sm transition-all duration-300 focus:border-or-400 focus:bg-white/80 focus:shadow-[0_0_0_3px_rgba(201,168,76,0.15)]"
+      >
+        {children}
+      </select>
+      <label
+        className={`pointer-events-none absolute left-4 transition-all duration-300 ${
+          focused || filled
+            ? "top-2 text-[10px] font-semibold text-or-600"
+            : "top-4 text-sm text-bordeaux-500"
+        }`}
+      >
+        {label} {required && <span className="text-or-700">*</span>}
+      </label>
+      {/* Chevron */}
+      <svg
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-bordeaux-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  );
+}
+
+/* ── Floating Textarea ─────────────────────────────────── */
+function FloatingTextarea({
+  name,
+  label,
+  rows = 3,
+}: {
+  name: string;
+  label: string;
+  rows?: number;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [filled, setFilled] = useState(false);
+
+  return (
+    <div className="group relative">
+      <textarea
+        name={name}
+        rows={rows}
+        onFocus={() => setFocused(true)}
+        onBlur={(e) => {
+          setFocused(false);
+          setFilled(e.target.value.length > 0);
+        }}
+        placeholder=" "
+        className="peer w-full resize-none rounded-xl border border-bordeaux-200/60 bg-white/60 px-4 pb-3 pt-6 text-bordeaux-900 outline-none backdrop-blur-sm transition-all duration-300 focus:border-or-400 focus:bg-white/80 focus:shadow-[0_0_0_3px_rgba(201,168,76,0.15)]"
+      />
+      <label
+        className={`pointer-events-none absolute left-4 transition-all duration-300 ${
+          focused || filled
+            ? "top-2 text-[10px] font-semibold text-or-600"
+            : "top-4 text-sm text-bordeaux-500"
+        }`}
+      >
+        {label}
+      </label>
     </div>
   );
 }

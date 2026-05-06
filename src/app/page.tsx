@@ -25,6 +25,7 @@ import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 import { AnimatedGradientBackground } from "@/components/animated-gradient-background";
 import { ShimmerButton, BorderAnimateButton } from "@/components/shimmer-button";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
+import { GalleryCarousel } from "@/components/gallery-carousel";
 
 /* ─── PHOTOS GALERIE (cils-01 → cils-28) ──────────── */
 const PHOTOS = Array.from({ length: 28 }, (_, i) => ({
@@ -439,21 +440,8 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-16 columns-2 gap-3 sm:columns-3 lg:columns-4 lg:gap-4">
-            {PHOTOS.map((p, i) => (
-              <div
-                key={i}
-                className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-bordeaux-100/60 bg-white shadow-sm transition-shadow hover:shadow-2xl hover:shadow-bordeaux-200/40 lg:mb-4"
-              >
-                <Image
-                  src={p.src}
-                  alt={p.alt}
-                  width={600}
-                  height={600}
-                  className="h-auto w-full object-cover"
-                />
-              </div>
-            ))}
+          <div className="mt-16">
+            <GalleryCarousel photos={PHOTOS} />
           </div>
         </div>
       </AnimatedSection>
@@ -483,16 +471,16 @@ export default function Home() {
       </AnimatedSection>
 
       {/* ── À PROPOS ── */}
-      <AnimatedSection id="apropos" className="relative z-10 py-24">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:px-10">
-          <div className="relative">
-            <div className="overflow-hidden rounded-[2rem] shadow-xl shadow-bordeaux-200/40">
+      <AnimatedSection id="apropos" className="relative z-10 py-14">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-[auto_1fr] lg:px-10">
+          <div className="relative mx-auto max-w-sm">
+            <div className="aspect-square overflow-hidden rounded-[2rem] shadow-xl shadow-bordeaux-200/40">
               <Image
                 src="/gallery/cils-03.png"
                 alt="Naéa Beauty au travail"
-                width={800}
-                height={800}
-                className="h-auto w-full object-contain"
+                width={400}
+                height={400}
+                className="h-full w-full object-cover"
               />
             </div>
           </div>
@@ -500,17 +488,17 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               L&apos;univers Naéa
             </span>
-            <h2 className="mt-3 font-display text-4xl text-bordeaux-900 md:text-5xl">
+            <h2 className="mt-2 font-display text-3xl text-bordeaux-900 md:text-4xl">
               Une beauté <em className="text-or-700">douce</em>, naturelle et
               durable
             </h2>
-            <p className="mt-5 text-base leading-relaxed text-bordeaux-900/80">
+            <p className="mt-4 text-sm leading-relaxed text-bordeaux-900/80">
               Chez Naéa Beauty, chaque rendez-vous est un moment pour soi.
               Je travaille en petits comités, avec des soins minutieux et des
               produits sélectionnés, pour vous offrir un résultat sublime sans
               dénaturer vos traits.
             </p>
-            <ul className="mt-8 space-y-4">
+            <ul className="mt-5 space-y-2.5">
               {[
                 "Une approche personnalisée à chaque cliente",
                 "Des produits professionnels haut de gamme",
@@ -519,7 +507,7 @@ export default function Home() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 text-bordeaux-900/85"
+                  className="flex items-start gap-2.5 text-sm text-bordeaux-900/85"
                 >
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-or-500" />
                   {item}
@@ -550,7 +538,7 @@ export default function Home() {
           </div>
 
           <div className="mx-auto mt-14 grid max-w-6xl gap-12 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-2xl border border-bordeaux-100/60 bg-white p-8 shadow-sm md:p-10">
+            <div className="rounded-2xl border border-or-200/30 bg-white/50 p-8 shadow-xl shadow-bordeaux-100/20 backdrop-blur-md md:p-10">
               <ReservationForm />
             </div>
 
