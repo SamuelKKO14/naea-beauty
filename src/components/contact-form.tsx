@@ -7,7 +7,7 @@ import { SERVICES } from "@/lib/services";
 type Status = "idle" | "loading" | "success" | "error";
 
 const inputClass =
-  "w-full rounded-lg border border-bordeaux-200 bg-white px-4 py-3 text-bordeaux-950 placeholder:text-bordeaux-400 outline-none transition-all focus:border-or-500 focus:shadow-[0_0_0_3px_rgba(201,169,97,0.12)]";
+  "w-full rounded-lg border border-bordeaux-200 bg-white px-4 py-3 text-bordeaux-950 placeholder:text-gray-400 outline-none transition-all focus:border-or-500 focus:shadow-[0_0_0_3px_rgba(201,169,97,0.12)]";
 
 const labelClass = "mb-1.5 block text-sm font-medium text-bordeaux-900";
 
@@ -61,7 +61,7 @@ export function ReservationForm() {
           Prestation souhaitée <span className="text-or-700">*</span>
         </label>
         <select name="service" required defaultValue="" className={inputClass}>
-          <option value="" disabled>
+          <option value="" disabled className="text-gray-400">
             Choisir une prestation
           </option>
           {SERVICES.map((s) => (
@@ -90,7 +90,7 @@ export function ReservationForm() {
             defaultValue=""
             className={inputClass}
           >
-            <option value="" disabled>
+            <option value="" disabled className="text-gray-400">
               Choisir un créneau
             </option>
             <option value="matin">Matin (9h – 12h)</option>
@@ -138,7 +138,6 @@ export function ReservationForm() {
             name="firstName"
             type="text"
             required
-            placeholder="Votre prénom"
             className={inputClass}
           />
         </div>
@@ -150,7 +149,6 @@ export function ReservationForm() {
             name="lastName"
             type="text"
             required
-            placeholder="Votre nom"
             className={inputClass}
           />
         </div>
@@ -166,7 +164,6 @@ export function ReservationForm() {
             name="phone"
             type="tel"
             required
-            placeholder="06 12 34 56 78"
             className={inputClass}
           />
         </div>
@@ -178,7 +175,6 @@ export function ReservationForm() {
             name="email"
             type="email"
             required
-            placeholder="votre@email.com"
             className={inputClass}
           />
         </div>
