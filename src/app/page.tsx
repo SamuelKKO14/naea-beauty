@@ -22,17 +22,11 @@ import { ReservationForm } from "@/components/contact-form";
 import { Mail } from "lucide-react";
 import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 
-/* ─── PHOTOS GALERIE ───────────────────────────────── */
-const PHOTOS: { src: string; alt: string }[] = [
-  { src: "/gallery/cils-1.png", alt: "Réhaussement de cils — résultat naturel" },
-  { src: "/gallery/cils-2.png", alt: "Réhaussement de cils Naéa Beauty" },
-  { src: "/gallery/browlift-1.png", alt: "Browlift — sourcils sublimés" },
-  { src: "/gallery/cils-3.png", alt: "Réhaussement de cils Naéa Beauty" },
-  { src: "/gallery/dents-1.png", alt: "Blanchiment dentaire en cours" },
-  { src: "/gallery/cils-4.png", alt: "Réhaussement de cils Naéa Beauty" },
-  { src: "/gallery/dents-3.png", alt: "Blanchiment dentaire — résultat" },
-  { src: "/gallery/dents-2.png", alt: "Blanchiment dentaire ultra white" },
-];
+/* ─── PHOTOS GALERIE (cils-01 → cils-28) ──────────── */
+const PHOTOS = Array.from({ length: 28 }, (_, i) => ({
+  src: `/gallery/cils-${String(i + 1).padStart(2, "0")}.png`,
+  alt: `Naéa Beauty — prestation cils #${i + 1}`,
+}));
 
 /* ─── SECTION ANIMÉE WRAPPER ───────────────────────── */
 function AnimatedSection({
@@ -384,35 +378,35 @@ export default function Home() {
                 <span className="hidden h-px flex-1 bg-bordeaux-100 md:block" />
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
                 {items.map((s) => (
                   <article
                     key={s.id}
-                    className="group flex overflow-hidden rounded-2xl border border-bordeaux-100/60 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-bordeaux-200/30"
+                    className="group overflow-hidden rounded-2xl border border-bordeaux-100/60 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-bordeaux-200/30"
                   >
                     {s.image && (
-                      <div className="relative w-32 shrink-0 overflow-hidden md:w-48">
+                      <div className="aspect-[4/5] overflow-hidden">
                         <Image
                           src={s.image}
                           alt={s.name}
-                          width={400}
-                          height={400}
+                          width={600}
+                          height={750}
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       </div>
                     )}
-                    <div className="flex flex-1 flex-col p-5 md:p-7">
-                      <h4 className="font-display text-2xl text-bordeaux-900">
+                    <div className="p-4 md:p-6">
+                      <h4 className="font-display text-lg text-bordeaux-900 md:text-2xl">
                         {s.name}
                       </h4>
-                      <p className="mt-2 flex-1 text-sm leading-relaxed text-bordeaux-900/70">
+                      <p className="mt-2 text-sm leading-relaxed text-bordeaux-900/70">
                         {s.description}
                       </p>
-                      <div className="mt-4 flex items-end justify-between border-t border-bordeaux-100/60 pt-4">
+                      <div className="mt-4 flex items-end justify-between border-t border-bordeaux-100/60 pt-3">
                         <span className="inline-flex items-center gap-1.5 text-xs text-bordeaux-900/60">
                           <Clock size={14} /> {s.duration}
                         </span>
-                        <span className="font-display text-3xl text-bordeaux-800">
+                        <span className="font-display text-2xl text-bordeaux-800 md:text-3xl">
                           {s.price} €
                         </span>
                       </div>
@@ -444,18 +438,18 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-16 columns-1 gap-4 sm:columns-2 lg:columns-3 lg:gap-6">
+          <div className="mt-16 columns-2 gap-3 sm:columns-3 lg:columns-4 lg:gap-4">
             {PHOTOS.map((p, i) => (
               <div
                 key={i}
-                className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-bordeaux-100/60 bg-white shadow-sm transition-shadow hover:shadow-2xl hover:shadow-bordeaux-200/40 lg:mb-6"
+                className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-bordeaux-100/60 bg-white shadow-sm transition-shadow hover:shadow-2xl hover:shadow-bordeaux-200/40 lg:mb-4"
               >
                 <Image
                   src={p.src}
                   alt={p.alt}
-                  width={800}
-                  height={800}
-                  className="h-auto w-full object-contain"
+                  width={600}
+                  height={600}
+                  className="h-auto w-full object-cover"
                 />
               </div>
             ))}
@@ -469,7 +463,7 @@ export default function Home() {
           <div className="relative">
             <div className="overflow-hidden rounded-[2rem] shadow-xl shadow-bordeaux-200/40">
               <Image
-                src="/gallery/cils-3.png"
+                src="/gallery/cils-03.png"
                 alt="Naéa Beauty au travail"
                 width={800}
                 height={800}
