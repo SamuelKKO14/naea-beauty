@@ -51,7 +51,7 @@ export function ReservationForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      <h3 className="font-display text-3xl text-bordeaux-900">
+      <h3 className="font-display text-2xl text-bordeaux-900">
         Réserver votre rendez-vous
       </h3>
 

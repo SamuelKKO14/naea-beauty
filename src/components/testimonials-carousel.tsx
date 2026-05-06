@@ -141,13 +141,13 @@ export function TestimonialsCarousel() {
             </div>
 
             {/* Quote text */}
-            <p className="text-lg leading-relaxed text-bordeaux-900/85 md:text-xl">
+            <p className="text-sm leading-relaxed text-bordeaux-900/70 md:text-base">
               &ldquo;{t.text}&rdquo;
             </p>
 
             {/* Author */}
             <div className="mt-6">
-              <p className="font-display text-lg text-bordeaux-900">
+              <p className="font-display text-base text-bordeaux-900">
                 {t.name}
               </p>
               <p className="text-sm text-bordeaux-600">{t.service}</p>

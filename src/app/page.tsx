@@ -348,10 +348,10 @@ export default function Home() {
           <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
             Carte des soins
           </span>
-          <h2 className="mt-3 font-display text-4xl text-bordeaux-900 md:text-5xl">
+          <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
             Prestations & tarifs
           </h2>
-          <p className="mt-5 text-base leading-relaxed text-bordeaux-900/70">
+          <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
             Toutes les prestations durent environ 1 heure. Paiement en espèces,
             par virement ou PayPal.
           </p>
@@ -372,7 +372,7 @@ export default function Home() {
                 </span>
 
                 {/* Name */}
-                <h4 className="mt-3 font-display text-lg leading-snug text-bordeaux-900 md:text-xl">
+                <h4 className="mt-3 font-display text-base leading-snug text-bordeaux-900 md:text-lg">
                   {s.name}
                 </h4>
 
@@ -402,9 +402,9 @@ export default function Home() {
 
               {/* Price + CTA */}
               <div className="mt-6 border-t border-or-200/40 pt-5">
-                <p className="text-center font-display text-3xl text-bordeaux-900 md:text-4xl">
+                <p className="text-center font-display text-2xl text-bordeaux-900">
                   {s.price}{" "}
-                  <span className="text-lg text-bordeaux-600">€</span>
+                  <span className="text-sm text-bordeaux-600">€</span>
                 </p>
                 <ShimmerButton
                   href="#reserver"
@@ -429,10 +429,10 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               Réalisations
             </span>
-            <h2 className="mt-3 font-display text-4xl text-bordeaux-900 md:text-5xl">
+            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
               Galerie
             </h2>
-            <p className="mt-5 text-base leading-relaxed text-bordeaux-900/70">
+            <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
               Quelques résultats de mes prestations. Chaque cliente est
               unique — l'adaptation est totale.
             </p>
@@ -454,10 +454,10 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               Elles en parlent
             </span>
-            <h2 className="mt-3 font-display text-4xl text-bordeaux-900 md:text-5xl">
+            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
               Avis clientes
             </h2>
-            <p className="mt-5 text-base leading-relaxed text-bordeaux-900/70">
+            <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
               La satisfaction de mes clientes est ma plus belle récompense.
             </p>
           </div>
@@ -490,7 +490,7 @@ export default function Home() {
               Une beauté <em className="text-or-700">douce</em>, naturelle et
               durable
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-bordeaux-900/80">
+            <p className="mt-4 text-sm leading-relaxed text-bordeaux-900/70">
               Chez Naéa Beauty, chaque rendez-vous est un moment pour soi.
               Je travaille en petits comités, avec des soins minutieux et des
               produits sélectionnés, pour vous offrir un résultat sublime sans
@@ -505,7 +505,7 @@ export default function Home() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-sm text-bordeaux-900/85"
+                  className="flex items-start gap-2.5 text-sm text-bordeaux-900/70"
                 >
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-or-500" />
                   {item}
@@ -526,10 +526,10 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               Demande de rendez-vous
             </span>
-            <h2 className="mt-3 font-display text-4xl text-bordeaux-900 md:text-5xl">
+            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
               Réserver votre rendez-vous
             </h2>
-            <p className="mt-5 text-base leading-relaxed text-bordeaux-900/70">
+            <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
               Remplissez le formulaire ci-dessous. Je vous réponds
               personnellement dans la journée pour confirmer votre créneau.
             </p>
@@ -542,7 +542,7 @@ export default function Home() {
 
             <aside className="space-y-6">
               <div className="rounded-2xl bg-bordeaux-950 p-8 text-or-100">
-                <h3 className="font-display text-2xl text-or-300">
+                <h3 className="font-display text-xl text-or-300">
                   Informations pratiques
                 </h3>
                 <ul className="mt-6 space-y-5 text-sm">
@@ -599,7 +599,7 @@ export default function Home() {
               </div>
 
               <div className="rounded-2xl border border-bordeaux-100/60 bg-cream p-8">
-                <h4 className="font-display text-xl text-bordeaux-900">
+                <h4 className="font-display text-lg text-bordeaux-900">
                   Bon à savoir
                 </h4>
                 <ul className="mt-4 space-y-2 text-sm text-bordeaux-900/75">
