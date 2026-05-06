@@ -9,6 +9,7 @@ import {
   Heart,
   MapPin,
   Sparkles,
+  Check,
 } from "lucide-react";
 import {
   motion,
@@ -17,10 +18,13 @@ import {
   useInView,
 } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { SERVICES, CATEGORIES } from "@/lib/services";
+import { SERVICES } from "@/lib/services";
 import { ReservationForm } from "@/components/contact-form";
 import { Mail } from "lucide-react";
 import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
+import { AnimatedGradientBackground } from "@/components/animated-gradient-background";
+import { ShimmerButton, BorderAnimateButton } from "@/components/shimmer-button";
+import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 
 /* ─── PHOTOS GALERIE (cils-01 → cils-28) ──────────── */
 const PHOTOS = Array.from({ length: 28 }, (_, i) => ({
@@ -104,6 +108,7 @@ const SECTIONS = [
   { id: "hero", label: "Accueil" },
   { id: "prestations", label: "Prestations" },
   { id: "galerie", label: "Galerie" },
+  { id: "temoignages", label: "Avis" },
   { id: "apropos", label: "À propos" },
   { id: "reserver", label: "Réserver" },
 ];
@@ -284,14 +289,7 @@ function HeroSection() {
               transition={{ delay: 1.0, duration: 0.6 }}
               className="mt-10 flex flex-col gap-3 sm:flex-row"
             >
-              <motion.a
-                href="#reserver"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-shadow hover:shadow-xl hover:shadow-or-500/40"
-              >
-                {/* Glow hover */}
-                <span className="pointer-events-none absolute inset-0 rounded-full bg-or-300/0 transition-colors group-hover:bg-or-300/30" />
+              <ShimmerButton href="#reserver">
                 <Calendar
                   size={18}
                   className="transition-transform group-hover:rotate-12"
@@ -301,13 +299,10 @@ function HeroSection() {
                   size={16}
                   className="transition-transform group-hover:translate-x-1"
                 />
-              </motion.a>
-              <a
-                href="#prestations"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-or-300/40 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-or-100 backdrop-blur-sm transition-all hover:border-or-300 hover:bg-or-100/5"
-              >
+              </ShimmerButton>
+              <BorderAnimateButton href="#prestations">
                 Voir les prestations
-              </a>
+              </BorderAnimateButton>
             </motion.div>
 
             {/* Tagline basse */}
@@ -342,13 +337,14 @@ function HeroSection() {
 export default function Home() {
   return (
     <>
+      <AnimatedGradientBackground />
       <ScrollIndicator />
 
       {/* ── HERO ── */}
       <HeroSection />
 
-      {/* ── PRESTATIONS ── */}
-      <AnimatedSection id="prestations" className="mx-auto max-w-7xl px-6 py-24 lg:px-10">
+      {/* ── PRESTATIONS (pricing cards) ── */}
+      <AnimatedSection id="prestations" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
             Carte des soins
@@ -362,67 +358,72 @@ export default function Home() {
           </p>
         </div>
 
-        {CATEGORIES.map((cat, idx) => {
-          const items = SERVICES.filter((s) => s.category === cat.name);
-          return (
-            <div key={cat.name} className={idx > 0 ? "mt-20" : "mt-16"}>
-              <div className="mb-10 flex items-end justify-between gap-4">
-                <div>
-                  <span className="text-xs uppercase tracking-[0.22em] text-or-700">
-                    {cat.tagline}
-                  </span>
-                  <h3 className="mt-2 font-display text-4xl text-bordeaux-900 md:text-5xl">
-                    {cat.name}
-                  </h3>
-                </div>
-                <span className="hidden h-px flex-1 bg-bordeaux-100 md:block" />
+        <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+          {SERVICES.map((s) => (
+            <motion.article
+              key={s.id}
+              whileHover={{ y: -6 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="group flex flex-col justify-between rounded-2xl border border-or-300/30 bg-white/70 p-5 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-xl hover:shadow-or-400/15 md:p-7"
+            >
+              {/* Category badge */}
+              <div>
+                <span className="inline-block rounded-full bg-bordeaux-950/5 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-bordeaux-600">
+                  {s.category}
+                </span>
+
+                {/* Name */}
+                <h4 className="mt-3 font-display text-lg leading-snug text-bordeaux-900 md:text-xl">
+                  {s.name}
+                </h4>
+
+                {/* Feature list */}
+                <ul className="mt-4 space-y-2">
+                  {s.description
+                    .split(/[.,;!]+/)
+                    .filter((part) => part.trim().length > 3)
+                    .map((part, i) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-sm leading-snug text-bordeaux-900/70"
+                      >
+                        <Check
+                          size={14}
+                          className="mt-0.5 shrink-0 text-or-500"
+                        />
+                        {part.trim()}
+                      </li>
+                    ))}
+                  <li className="flex items-start gap-2 text-sm leading-snug text-bordeaux-900/70">
+                    <Clock size={14} className="mt-0.5 shrink-0 text-or-500" />
+                    Durée : {s.duration}
+                  </li>
+                </ul>
               </div>
 
-              <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
-                {items.map((s) => (
-                  <article
-                    key={s.id}
-                    className="group overflow-hidden rounded-2xl border border-bordeaux-100/60 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-bordeaux-200/30"
-                  >
-                    {s.image && (
-                      <div className="aspect-[4/5] overflow-hidden">
-                        <Image
-                          src={s.image}
-                          alt={s.name}
-                          width={600}
-                          height={750}
-                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      </div>
-                    )}
-                    <div className="p-4 md:p-6">
-                      <h4 className="font-display text-lg text-bordeaux-900 md:text-2xl">
-                        {s.name}
-                      </h4>
-                      <p className="mt-2 text-sm leading-relaxed text-bordeaux-900/70">
-                        {s.description}
-                      </p>
-                      <div className="mt-4 flex items-end justify-between border-t border-bordeaux-100/60 pt-3">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-bordeaux-900/60">
-                          <Clock size={14} /> {s.duration}
-                        </span>
-                        <span className="font-display text-2xl text-bordeaux-800 md:text-3xl">
-                          {s.price} €
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+              {/* Price + CTA */}
+              <div className="mt-6 border-t border-or-200/40 pt-5">
+                <p className="text-center font-display text-3xl text-bordeaux-900 md:text-4xl">
+                  {s.price}{" "}
+                  <span className="text-lg text-bordeaux-600">€</span>
+                </p>
+                <ShimmerButton
+                  href="#reserver"
+                  className="mt-4 w-full justify-center px-4 py-3 text-xs"
+                >
+                  <Calendar size={14} />
+                  Réserver
+                </ShimmerButton>
               </div>
-            </div>
-          );
-        })}
+            </motion.article>
+          ))}
+        </div>
       </AnimatedSection>
 
       {/* ── GALERIE ── */}
       <AnimatedSection
         id="galerie"
-        className="border-y border-bordeaux-100/60 bg-bordeaux-50/30 py-24"
+        className="relative z-10 border-y border-bordeaux-100/60 bg-bordeaux-50/30 py-24"
       >
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">
@@ -457,8 +458,32 @@ export default function Home() {
         </div>
       </AnimatedSection>
 
+      {/* ── TÉMOIGNAGES ── */}
+      <AnimatedSection
+        id="temoignages"
+        className="relative z-10 py-24"
+      >
+        <div className="mx-auto max-w-7xl px-6 lg:px-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
+              Elles en parlent
+            </span>
+            <h2 className="mt-3 font-display text-4xl text-bordeaux-900 md:text-5xl">
+              Avis clientes
+            </h2>
+            <p className="mt-5 text-base leading-relaxed text-bordeaux-900/70">
+              La satisfaction de mes clientes est ma plus belle récompense.
+            </p>
+          </div>
+
+          <div className="mt-14">
+            <TestimonialsCarousel />
+          </div>
+        </div>
+      </AnimatedSection>
+
       {/* ── À PROPOS ── */}
-      <AnimatedSection id="apropos" className="py-24">
+      <AnimatedSection id="apropos" className="relative z-10 py-24">
         <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-2 lg:px-10">
           <div className="relative">
             <div className="overflow-hidden rounded-[2rem] shadow-xl shadow-bordeaux-200/40">
@@ -508,7 +533,7 @@ export default function Home() {
       {/* ── RÉSERVER ── */}
       <AnimatedSection
         id="reserver"
-        className="border-t border-bordeaux-100/60 bg-gradient-to-b from-bordeaux-50/50 to-cream py-24"
+        className="relative z-10 border-t border-bordeaux-100/60 bg-gradient-to-b from-bordeaux-50/50 to-cream py-24"
       >
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">

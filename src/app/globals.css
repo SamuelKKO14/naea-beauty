@@ -76,3 +76,122 @@ html {
 .animate-shimmer {
   animation: shimmer 2.5s ease-in-out infinite;
 }
+
+/* ── Shimmer doré (boutons CTA) ────────────────────────── */
+@keyframes shimmer-gold {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-shimmer-gold {
+  animation: shimmer-gold 3s ease-in-out infinite;
+}
+
+/* ── Rotation du gradient de bordure ───────────────────── */
+@keyframes border-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-border-rotate {
+  animation: border-rotate 4s linear infinite;
+}
+
+/* ── Mesh gradient blobs (background animé) ────────────── */
+@keyframes mesh-drift-1 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  25% {
+    transform: translate(10%, 15%) scale(1.08);
+  }
+  50% {
+    transform: translate(-5%, 10%) scale(0.95);
+  }
+  75% {
+    transform: translate(8%, -5%) scale(1.05);
+  }
+}
+
+@keyframes mesh-drift-2 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  25% {
+    transform: translate(-15%, 8%) scale(1.1);
+  }
+  50% {
+    transform: translate(10%, -10%) scale(0.92);
+  }
+  75% {
+    transform: translate(-8%, 12%) scale(1.06);
+  }
+}
+
+@keyframes mesh-drift-3 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  25% {
+    transform: translate(12%, -8%) scale(0.95);
+  }
+  50% {
+    transform: translate(-10%, -15%) scale(1.1);
+  }
+  75% {
+    transform: translate(5%, 10%) scale(1.02);
+  }
+}
+
+@keyframes mesh-drift-4 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  33% {
+    transform: translate(-12%, 10%) scale(1.08);
+  }
+  66% {
+    transform: translate(8%, -12%) scale(0.94);
+  }
+}
+
+@keyframes mesh-drift-5 {
+  0%,
+  100% {
+    transform: translate(0%, 0%) scale(1);
+  }
+  33% {
+    transform: translate(10%, -8%) scale(1.06);
+  }
+  66% {
+    transform: translate(-8%, 6%) scale(0.96);
+  }
+}
+
+.animate-mesh-1 {
+  animation: mesh-drift-1 20s ease-in-out infinite;
+}
+.animate-mesh-2 {
+  animation: mesh-drift-2 25s ease-in-out infinite;
+}
+.animate-mesh-3 {
+  animation: mesh-drift-3 22s ease-in-out infinite;
+}
+.animate-mesh-4 {
+  animation: mesh-drift-4 18s ease-in-out infinite;
+}
+.animate-mesh-5 {
+  animation: mesh-drift-5 24s ease-in-out infinite;
+}
