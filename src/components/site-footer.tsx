@@ -3,7 +3,7 @@ import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-bordeaux-100/40 bg-bordeaux-950 text-or-100">
+    <footer className="relative z-10 mt-24 border-t border-bordeaux-100/40 bg-bordeaux-950 text-or-100">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-3 lg:px-10">
         <div>
           <h3 className="font-display text-2xl tracking-wide">Naéa Beauty</h3>
