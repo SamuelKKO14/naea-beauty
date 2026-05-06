@@ -22,7 +22,6 @@ import { SERVICES } from "@/lib/services";
 import { ReservationForm } from "@/components/contact-form";
 import { Mail } from "lucide-react";
 import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
-import { AnimatedGradientBackground } from "@/components/animated-gradient-background";
 import { ShimmerButton, BorderAnimateButton } from "@/components/shimmer-button";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 import { GalleryCarousel } from "@/components/gallery-carousel";
@@ -338,7 +337,6 @@ function HeroSection() {
 export default function Home() {
   return (
     <>
-      <AnimatedGradientBackground />
       <ScrollIndicator />
 
       {/* ── HERO ── */}
@@ -359,7 +357,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
+        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
           {SERVICES.map((s) => (
             <motion.article
               key={s.id}
@@ -538,7 +536,7 @@ export default function Home() {
           </div>
 
           <div className="mx-auto mt-14 grid max-w-6xl gap-12 lg:grid-cols-[1.4fr_1fr]">
-            <div className="rounded-2xl border border-or-200/30 bg-white/50 p-8 shadow-xl shadow-bordeaux-100/20 backdrop-blur-md md:p-10">
+            <div className="rounded-2xl border border-bordeaux-100/60 bg-white p-8 shadow-sm md:p-10">
               <ReservationForm />
             </div>
 

@@ -6,6 +6,11 @@ import { SERVICES } from "@/lib/services";
 
 type Status = "idle" | "loading" | "success" | "error";
 
+const inputClass =
+  "w-full rounded-lg border border-bordeaux-200 bg-white px-4 py-3 text-bordeaux-950 placeholder:text-bordeaux-400 outline-none transition-all focus:border-or-500 focus:shadow-[0_0_0_3px_rgba(201,169,97,0.12)]";
+
+const labelClass = "mb-1.5 block text-sm font-medium text-bordeaux-900";
+
 export function ReservationForm() {
   const [status, setStatus] = useState<Status>("idle");
 
@@ -51,32 +56,48 @@ export function ReservationForm() {
       </h3>
 
       {/* Prestation */}
-      <FloatingSelect
-        name="service"
-        label="Prestation souhaitée"
-        required
-      >
-        <option value="" disabled>
-          Choisir une prestation
-        </option>
-        {SERVICES.map((s) => (
-          <option key={s.id} value={s.name}>
-            {s.name} — {s.price} €
+      <div>
+        <label className={labelClass}>
+          Prestation souhaitée <span className="text-or-700">*</span>
+        </label>
+        <select name="service" required defaultValue="" className={inputClass}>
+          <option value="" disabled>
+            Choisir une prestation
           </option>
-        ))}
-      </FloatingSelect>
+          {SERVICES.map((s) => (
+            <option key={s.id} value={s.name}>
+              {s.name} — {s.price} €
+            </option>
+          ))}
+        </select>
+      </div>
 
       {/* Date + Créneau */}
-      <div className="grid gap-5 md:grid-cols-2">
-        <FloatingInput name="date" label="Date souhaitée" type="date" required />
-        <FloatingSelect name="timeslot" label="Créneau horaire" required>
-          <option value="" disabled>
-            Choisir un créneau
-          </option>
-          <option value="matin">Matin (9h – 12h)</option>
-          <option value="apres-midi">Après-midi (13h – 17h)</option>
-          <option value="soir">Soir (17h – 20h)</option>
-        </FloatingSelect>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className={labelClass}>
+            Date souhaitée <span className="text-or-700">*</span>
+          </label>
+          <input type="date" name="date" required className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>
+            Créneau horaire préféré <span className="text-or-700">*</span>
+          </label>
+          <select
+            name="timeslot"
+            required
+            defaultValue=""
+            className={inputClass}
+          >
+            <option value="" disabled>
+              Choisir un créneau
+            </option>
+            <option value="matin">Matin (9h – 12h)</option>
+            <option value="apres-midi">Après-midi (13h – 17h)</option>
+            <option value="soir">Soir (17h – 20h)</option>
+          </select>
+        </div>
       </div>
 
       {/* Lieu */}
@@ -108,30 +129,83 @@ export function ReservationForm() {
       </fieldset>
 
       {/* Prénom + Nom */}
-      <div className="grid gap-5 md:grid-cols-2">
-        <FloatingInput name="firstName" label="Prénom" required />
-        <FloatingInput name="lastName" label="Nom" required />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className={labelClass}>
+            Prénom <span className="text-or-700">*</span>
+          </label>
+          <input
+            name="firstName"
+            type="text"
+            required
+            placeholder="Votre prénom"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>
+            Nom <span className="text-or-700">*</span>
+          </label>
+          <input
+            name="lastName"
+            type="text"
+            required
+            placeholder="Votre nom"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       {/* Téléphone + Email */}
-      <div className="grid gap-5 md:grid-cols-2">
-        <FloatingInput name="phone" label="Téléphone" type="tel" required />
-        <FloatingInput name="email" label="Email" type="email" required />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className={labelClass}>
+            Téléphone <span className="text-or-700">*</span>
+          </label>
+          <input
+            name="phone"
+            type="tel"
+            required
+            placeholder="06 12 34 56 78"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>
+            Email <span className="text-or-700">*</span>
+          </label>
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="votre@email.com"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       {/* Mode de paiement */}
-      <FloatingSelect name="payment" label="Mode de paiement">
-        <option value="especes">Espèces</option>
-        <option value="virement">Virement</option>
-        <option value="paypal">PayPal</option>
-      </FloatingSelect>
+      <div>
+        <label className={labelClass}>Mode de paiement préféré</label>
+        <select name="payment" defaultValue="especes" className={inputClass}>
+          <option value="especes">Espèces</option>
+          <option value="virement">Virement</option>
+          <option value="paypal">PayPal</option>
+        </select>
+      </div>
 
       {/* Message */}
-      <FloatingTextarea
-        name="message"
-        label="Message complémentaire (optionnel)"
-        rows={3}
-      />
+      <div>
+        <label className={labelClass}>
+          Message complémentaire (optionnel)
+        </label>
+        <textarea
+          name="message"
+          rows={3}
+          placeholder="Précisez vos disponibilités, questions, attentes…"
+          className={`${inputClass} resize-none`}
+        />
+      </div>
 
       {/* Submit — shimmer doré */}
       <button
@@ -158,139 +232,5 @@ export function ReservationForm() {
         </p>
       )}
     </form>
-  );
-}
-
-/* ── Floating Input ────────────────────────────────────── */
-function FloatingInput({
-  name,
-  label,
-  type = "text",
-  required = false,
-}: {
-  name: string;
-  label: string;
-  type?: string;
-  required?: boolean;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [filled, setFilled] = useState(type === "date");
-
-  return (
-    <div className="group relative">
-      <input
-        name={name}
-        type={type}
-        required={required}
-        onFocus={() => setFocused(true)}
-        onBlur={(e) => {
-          setFocused(false);
-          setFilled(e.target.value.length > 0 || type === "date");
-        }}
-        placeholder=" "
-        className="peer w-full rounded-xl border border-bordeaux-200/60 bg-white/60 px-4 pb-2.5 pt-6 text-bordeaux-900 outline-none backdrop-blur-sm transition-all duration-300 focus:border-or-400 focus:bg-white/80 focus:shadow-[0_0_0_3px_rgba(201,168,76,0.15)]"
-      />
-      <label
-        className={`pointer-events-none absolute left-4 transition-all duration-300 ${
-          focused || filled
-            ? "top-2 text-[10px] font-semibold text-or-600"
-            : "top-4 text-sm text-bordeaux-500"
-        }`}
-      >
-        {label} {required && <span className="text-or-700">*</span>}
-      </label>
-    </div>
-  );
-}
-
-/* ── Floating Select ───────────────────────────────────── */
-function FloatingSelect({
-  name,
-  label,
-  required = false,
-  children,
-}: {
-  name: string;
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [filled, setFilled] = useState(false);
-
-  return (
-    <div className="group relative">
-      <select
-        name={name}
-        required={required}
-        defaultValue=""
-        onFocus={() => setFocused(true)}
-        onBlur={(e) => {
-          setFocused(false);
-          setFilled(e.target.value.length > 0);
-        }}
-        onChange={(e) => setFilled(e.target.value.length > 0)}
-        className="peer w-full appearance-none rounded-xl border border-bordeaux-200/60 bg-white/60 px-4 pb-2.5 pt-6 text-bordeaux-900 outline-none backdrop-blur-sm transition-all duration-300 focus:border-or-400 focus:bg-white/80 focus:shadow-[0_0_0_3px_rgba(201,168,76,0.15)]"
-      >
-        {children}
-      </select>
-      <label
-        className={`pointer-events-none absolute left-4 transition-all duration-300 ${
-          focused || filled
-            ? "top-2 text-[10px] font-semibold text-or-600"
-            : "top-4 text-sm text-bordeaux-500"
-        }`}
-      >
-        {label} {required && <span className="text-or-700">*</span>}
-      </label>
-      {/* Chevron */}
-      <svg
-        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-bordeaux-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </div>
-  );
-}
-
-/* ── Floating Textarea ─────────────────────────────────── */
-function FloatingTextarea({
-  name,
-  label,
-  rows = 3,
-}: {
-  name: string;
-  label: string;
-  rows?: number;
-}) {
-  const [focused, setFocused] = useState(false);
-  const [filled, setFilled] = useState(false);
-
-  return (
-    <div className="group relative">
-      <textarea
-        name={name}
-        rows={rows}
-        onFocus={() => setFocused(true)}
-        onBlur={(e) => {
-          setFocused(false);
-          setFilled(e.target.value.length > 0);
-        }}
-        placeholder=" "
-        className="peer w-full resize-none rounded-xl border border-bordeaux-200/60 bg-white/60 px-4 pb-3 pt-6 text-bordeaux-900 outline-none backdrop-blur-sm transition-all duration-300 focus:border-or-400 focus:bg-white/80 focus:shadow-[0_0_0_3px_rgba(201,168,76,0.15)]"
-      />
-      <label
-        className={`pointer-events-none absolute left-4 transition-all duration-300 ${
-          focused || filled
-            ? "top-2 text-[10px] font-semibold text-or-600"
-            : "top-4 text-sm text-bordeaux-500"
-        }`}
-      >
-        {label}
-      </label>
-    </div>
   );
 }
