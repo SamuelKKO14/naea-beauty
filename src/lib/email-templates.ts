@@ -10,24 +10,21 @@ const GRIS_SEC = "#888888";
 const FONT_TITRE = "Georgia, 'Times New Roman', serif";
 const FONT_CORPS = "Arial, Helvetica, sans-serif";
 
-const LOGO_URL = "https://naeabeauty.beauty/logo.png";
-
 function layout(content: string) {
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="${LOGO_URL}">
 </head>
 <body style="margin:0;padding:0;background-color:${CREAM};font-family:${FONT_CORPS};">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:${CREAM};padding:24px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${BLANC};border-radius:12px;overflow:hidden;border:1px solid ${OR_CLAIR};">
-  <!-- Header avec logo -->
+  <!-- Header -->
   <tr>
-    <td style="background-color:${BORDEAUX_950};padding:28px 40px;text-align:center;">
-      <img src="${LOGO_URL}" alt="Naéa Beauty" height="60" style="height:60px;width:auto;display:inline-block;" />
+    <td style="background-color:#3D0F1E;padding:0;text-align:center;height:120px;line-height:120px;">
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#C9A84C;font-weight:700;letter-spacing:1px;vertical-align:middle;">Na\u00E9a Beauty</span>
     </td>
   </tr>
   <!-- Espace -->
@@ -44,7 +41,7 @@ function layout(content: string) {
       <p style="margin:0 0 4px;font-family:${FONT_TITRE};font-size:18px;color:${BORDEAUX_800};font-weight:700;">Naéa Beauty</p>
       <p style="margin:0 0 16px;font-size:12px;color:${GRIS_SEC};">Nantes — Beauté sur mesure</p>
       <p style="margin:0 0 6px;color:${GRIS_SEC};font-size:13px;">07 68 60 89 80 &middot; Instagram <a href="https://instagram.com/naea_beauty" style="color:${OR};text-decoration:none;">@naea_beauty</a></p>
-      <p style="margin:0;color:#aaa;font-size:11px;">Naéa Beauty &mdash; Tous droits réservés</p>
+      <p style="margin:0;color:#999999;font-size:11px;">Naéa Beauty &mdash; Tous droits réservés</p>
     </td>
   </tr>
 </table>
