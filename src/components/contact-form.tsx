@@ -10,6 +10,7 @@ type BookedSlot = {
   heure_rdv: string;
   prestation_id: string;
   statut: string;
+  acompte_paye: boolean;
   prestation: { duree_minutes: number }[] | null;
 };
 
@@ -112,10 +113,11 @@ export function ReservationForm() {
       const end = dateToStr(new Date(calMonth.getFullYear(), calMonth.getMonth() + 2, 0));
       const { data } = await supabase
         .from("reservations")
-        .select("date_rdv, heure_rdv, prestation_id, statut, prestation:prestations(duree_minutes)")
+        .select("date_rdv, heure_rdv, prestation_id, statut, acompte_paye, prestation:prestations(duree_minutes)")
         .gte("date_rdv", start)
         .lte("date_rdv", end)
-        .not("statut", "in", '("annulee","no_show")');
+        .in("statut", ["confirmee", "realisee"])
+        .eq("acompte_paye", true);
       setReservations((data as BookedSlot[]) || []);
     }
     loadReservations();
@@ -143,13 +145,13 @@ export function ReservationForm() {
     [indispos]
   );
 
-  // --- Is date available ---
-  const isDateAvailable = useCallback(
+  // --- Is date available (base check, without fully-booked) ---
+  const isDateBaseAvailable = useCallback(
     (date: Date) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       if (date < today) return false;
-      if (isSameDay(date, today)) return false; // pas de RDV le jour même
+      if (isSameDay(date, today)) return false;
       if (isIndispo(date)) return false;
       const dbDay = jsToDbDay(date.getDay());
       return dispoMap.has(dbDay);
@@ -218,6 +220,52 @@ export function ReservationForm() {
     }
     return days;
   }, [calMonth]);
+
+  // --- Dates entièrement réservées (tous les créneaux pris par confirmées+payées) ---
+  const fullyBookedDates = useMemo(() => {
+    if (!prestation) return new Set<string>();
+    const booked = new Set<string>();
+    const duree = prestation.duree_minutes;
+
+    for (const day of calDays) {
+      if (!day) continue;
+      if (!isDateBaseAvailable(day)) continue;
+      const dbDay = jsToDbDay(day.getDay());
+      const dispo = dispoMap.get(dbDay);
+      if (!dispo) continue;
+
+      const debut = parseTime(dispo.heure_debut);
+      const fin = parseTime(dispo.heure_fin);
+      const step = duree + battement;
+      const dateStr = dateToStr(day);
+      const dayRes = reservations.filter((r) => r.date_rdv === dateStr);
+
+      if (dayRes.length === 0) continue; // Pas de réservation = pas full
+
+      let allTaken = true;
+      for (let t = debut; t + duree <= fin; t += step) {
+        const conflict = dayRes.some((r) => {
+          const rStart = parseTime(r.heure_rdv);
+          const rDuree = r.prestation?.[0]?.duree_minutes || 60;
+          const rEnd = rStart + rDuree;
+          return t < rEnd && (t + duree) > rStart;
+        });
+        if (!conflict) { allTaken = false; break; }
+      }
+      if (allTaken) booked.add(dateStr);
+    }
+    return booked;
+  }, [prestation, calDays, isDateBaseAvailable, dispoMap, reservations, battement]);
+
+  // --- Is date available (final, includes fully-booked check) ---
+  const isDateAvailable = useCallback(
+    (date: Date) => {
+      if (!isDateBaseAvailable(date)) return false;
+      if (fullyBookedDates.has(dateToStr(date))) return false;
+      return true;
+    },
+    [isDateBaseAvailable, fullyBookedDates]
+  );
 
   // --- Submit ---
   const [isSubmitting, setIsSubmitting] = useState(false);

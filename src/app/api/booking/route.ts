@@ -45,14 +45,31 @@ export async function POST(request: Request) {
       return Response.json({ error: "Prestation introuvable ou inactive." }, { status: 400 });
     }
 
-    // --- Vérifier doublon exact : même email + date + heure ---
+    // --- Vérifier si créneau pris par une réservation confirmée+payée ---
     const emailNorm = email.trim().toLowerCase();
+    const { data: confirmed } = await supabase
+      .from("reservations")
+      .select("id")
+      .eq("date_rdv", date_rdv)
+      .eq("heure_rdv", heure_rdv)
+      .in("statut", ["confirmee", "realisee"])
+      .eq("acompte_paye", true)
+      .limit(1);
+
+    console.log("=== CONFIRMED SLOT CHECK ===", JSON.stringify(confirmed));
+
+    if (confirmed && confirmed.length > 0) {
+      console.log("=== SLOT TAKEN BY CONFIRMED+PAID ===");
+      return Response.json({ error: "Ce créneau n'est plus disponible." }, { status: 409 });
+    }
+
+    // --- Vérifier doublon exact : même email + date + heure (en_attente) ---
     const { data: duplicate } = await supabase
       .from("reservations")
       .select("id, montant_total, montant_acompte, client:clients(email)")
       .eq("date_rdv", date_rdv)
       .eq("heure_rdv", heure_rdv)
-      .not("statut", "in", '("annulee","no_show")')
+      .eq("statut", "en_attente")
       .limit(10);
 
     console.log("=== DUPLICATE CHECK ===", JSON.stringify(duplicate));
@@ -71,8 +88,6 @@ export async function POST(request: Request) {
           _debug: "duplicate_returned",
         });
       }
-      console.log("=== SLOT TAKEN BY SOMEONE ELSE ===");
-      return Response.json({ error: "Ce créneau est déjà réservé." }, { status: 409 });
     }
 
     // --- Find or create client ---
