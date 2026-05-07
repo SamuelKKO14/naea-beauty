@@ -1,8 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Calendar, Check } from "lucide-react";
-import { SERVICES } from "@/lib/services";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Calendar, Check, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { createClient } from "@/lib/supabase";
+import type { Prestation, Disponibilite, Indisponibilite } from "@/lib/types";
+
+type BookedSlot = {
+  date_rdv: string;
+  heure_rdv: string;
+  prestation_id: string;
+  statut: string;
+  prestation: { duree_minutes: number }[] | null;
+};
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -11,27 +20,234 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-sm font-medium text-bordeaux-900";
 
+const JOUR_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+const MOIS_LABELS = [
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+];
+
+// Convertir JS day (0=dim) en DB jour_semaine (0=lundi)
+function jsToDbDay(jsDay: number): number {
+  return (jsDay + 6) % 7;
+}
+
+function parseTime(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function formatTime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}h${m.toString().padStart(2, "0")}`;
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function dateToStr(d: Date) {
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
+}
+
 export function ReservationForm() {
   const [status, setStatus] = useState<Status>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const supabase = createClient();
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Data
+  const [prestations, setPrestations] = useState<Prestation[]>([]);
+  const [dispos, setDispos] = useState<Disponibilite[]>([]);
+  const [indispos, setIndispos] = useState<Indisponibilite[]>([]);
+  const [reservations, setReservations] = useState<BookedSlot[]>([]);
+  const [battement, setBattement] = useState(30);
+
+  // Form state
+  const [selectedPrestation, setSelectedPrestation] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string>("");
+  const [lieu, setLieu] = useState<"chez_naea" | "domicile">("chez_naea");
+  const [prenom, setPrenom] = useState("");
+  const [nom, setNom] = useState("");
+  const [telephone, setTelephone] = useState("");
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
+
+  // Calendar
+  const [calMonth, setCalMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
+  // --- Fetch data ---
+  useEffect(() => {
+    async function load() {
+      const [presRes, dispoRes, indispoRes, paramRes] = await Promise.all([
+        supabase.from("prestations").select("*").eq("actif", true).order("ordre"),
+        supabase.from("disponibilites").select("*").eq("actif", true),
+        supabase.from("indisponibilites").select("*"),
+        supabase.from("parametres").select("valeur").eq("cle", "battement_minutes").single(),
+      ]);
+      setPrestations(presRes.data || []);
+      setDispos(dispoRes.data || []);
+      setIndispos(indispoRes.data || []);
+      if (paramRes.data) setBattement(parseInt(paramRes.data.valeur, 10) || 30);
+    }
+    load();
+  }, []);
+
+  // Fetch reservations when date changes (month scope)
+  useEffect(() => {
+    async function loadReservations() {
+      const start = dateToStr(calMonth);
+      const end = dateToStr(new Date(calMonth.getFullYear(), calMonth.getMonth() + 2, 0));
+      const { data } = await supabase
+        .from("reservations")
+        .select("date_rdv, heure_rdv, prestation_id, statut, prestation:prestations(duree_minutes)")
+        .gte("date_rdv", start)
+        .lte("date_rdv", end)
+        .not("statut", "in", '("annulee","no_show")');
+      setReservations((data as BookedSlot[]) || []);
+    }
+    loadReservations();
+  }, [calMonth]);
+
+  // --- Prestation sélectionnée ---
+  const prestation = useMemo(
+    () => prestations.find((p) => p.id === selectedPrestation),
+    [prestations, selectedPrestation]
+  );
+
+  // --- Jours disponibles map: dbDay -> Disponibilite ---
+  const dispoMap = useMemo(() => {
+    const m = new Map<number, Disponibilite>();
+    dispos.forEach((d) => m.set(d.jour_semaine, d));
+    return m;
+  }, [dispos]);
+
+  // --- Is date indisponible ---
+  const isIndispo = useCallback(
+    (date: Date) => {
+      const ds = dateToStr(date);
+      return indispos.some((i) => ds >= i.date_debut && ds <= i.date_fin);
+    },
+    [indispos]
+  );
+
+  // --- Is date available ---
+  const isDateAvailable = useCallback(
+    (date: Date) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (date < today) return false;
+      if (isSameDay(date, today)) return false; // pas de RDV le jour même
+      if (isIndispo(date)) return false;
+      const dbDay = jsToDbDay(date.getDay());
+      return dispoMap.has(dbDay);
+    },
+    [dispoMap, isIndispo]
+  );
+
+  // --- Générer les créneaux pour la date sélectionnée ---
+  const slots = useMemo(() => {
+    if (!selectedDate || !prestation) return [];
+    const dbDay = jsToDbDay(selectedDate.getDay());
+    const dispo = dispoMap.get(dbDay);
+    if (!dispo) return [];
+
+    const debut = parseTime(dispo.heure_debut);
+    const fin = parseTime(dispo.heure_fin);
+    const duree = prestation.duree_minutes;
+    const step = duree + battement;
+    const dateStr = dateToStr(selectedDate);
+
+    // Réservations ce jour-là
+    const dayRes = reservations.filter((r) => r.date_rdv === dateStr);
+
+    const result: string[] = [];
+    for (let t = debut; t + duree <= fin; t += step) {
+      const slotStr = `${Math.floor(t / 60).toString().padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
+
+      // Vérifier chevauchement avec réservations existantes
+      const conflict = dayRes.some((r) => {
+        const rStart = parseTime(r.heure_rdv);
+        const rDuree = r.prestation?.[0]?.duree_minutes || 60;
+        const rEnd = rStart + rDuree;
+        const slotEnd = t + duree;
+        return t < rEnd && slotEnd > rStart;
+      });
+
+      if (!conflict) result.push(slotStr);
+    }
+    return result;
+  }, [selectedDate, prestation, dispoMap, reservations, battement]);
+
+  // Reset slot when date or prestation changes
+  useEffect(() => {
+    setSelectedSlot("");
+  }, [selectedDate, selectedPrestation]);
+
+  // Reset date when prestation changes
+  useEffect(() => {
+    setSelectedDate(null);
+  }, [selectedPrestation]);
+
+  // --- Calendar rendering ---
+  const calDays = useMemo(() => {
+    const year = calMonth.getFullYear();
+    const month = calMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    // Jour de la semaine du 1er (lundi = 0)
+    let startOffset = (firstDay.getDay() + 6) % 7;
+    const days: (Date | null)[] = [];
+
+    for (let i = 0; i < startOffset; i++) days.push(null);
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      days.push(new Date(year, month, d));
+    }
+    return days;
+  }, [calMonth]);
+
+  // --- Submit ---
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!selectedPrestation || !selectedDate || !selectedSlot || !prenom || !nom || !email || !telephone) return;
+
     setStatus("loading");
-    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+    setErrorMsg("");
+
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          prestation_id: selectedPrestation,
+          date_rdv: dateToStr(selectedDate),
+          heure_rdv: selectedSlot,
+          lieu,
+          prenom,
+          nom,
+          email,
+          telephone,
+          notes_client: notes || null,
+        }),
       });
-      if (!res.ok) throw new Error("error");
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erreur");
+      }
+
       setStatus("success");
-      e.currentTarget.reset();
-    } catch {
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Une erreur est survenue.");
       setStatus("error");
     }
   }
 
+  // --- Success ---
   if (status === "success") {
     return (
       <div className="flex flex-col items-center py-10 text-center">
@@ -49,8 +265,13 @@ export function ReservationForm() {
     );
   }
 
+  const today = new Date();
+  const canGoPrev =
+    calMonth.getFullYear() > today.getFullYear() ||
+    (calMonth.getFullYear() === today.getFullYear() && calMonth.getMonth() > today.getMonth());
+
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <h3 className="font-display text-2xl text-bordeaux-900">
         Réserver votre rendez-vous
       </h3>
@@ -60,45 +281,119 @@ export function ReservationForm() {
         <label className={labelClass}>
           Prestation souhaitée <span className="text-or-700">*</span>
         </label>
-        <select name="service" required defaultValue="" className={inputClass}>
+        <select
+          value={selectedPrestation}
+          onChange={(e) => setSelectedPrestation(e.target.value)}
+          required
+          className={inputClass}
+        >
           <option value="" disabled className="text-gray-400">
             Choisir une prestation
           </option>
-          {SERVICES.map((s) => (
-            <option key={s.id} value={s.name}>
-              {s.name} — {s.price} €
+          {prestations.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.nom} — {p.prix} €
             </option>
           ))}
         </select>
       </div>
 
-      {/* Date + Créneau */}
-      <div className="grid gap-5 sm:grid-cols-2">
+      {/* Calendrier */}
+      {selectedPrestation && (
         <div>
           <label className={labelClass}>
             Date souhaitée <span className="text-or-700">*</span>
           </label>
-          <input type="date" name="date" required className={inputClass} />
+          <div className="rounded-lg border border-bordeaux-200 bg-white p-4">
+            {/* Header mois */}
+            <div className="mb-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))}
+                disabled={!canGoPrev}
+                className="rounded p-1 text-bordeaux-700 hover:bg-bordeaux-50 disabled:opacity-30"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span className="text-sm font-semibold text-bordeaux-900">
+                {MOIS_LABELS[calMonth.getMonth()]} {calMonth.getFullYear()}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))}
+                className="rounded p-1 text-bordeaux-700 hover:bg-bordeaux-50"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+
+            {/* Jours de la semaine */}
+            <div className="mb-1 grid grid-cols-7 text-center text-xs font-medium text-bordeaux-900/50">
+              {JOUR_LABELS.map((j) => (
+                <div key={j} className="py-1">{j}</div>
+              ))}
+            </div>
+
+            {/* Jours */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {calDays.map((day, i) => {
+                if (!day) return <div key={`e-${i}`} />;
+                const available = isDateAvailable(day);
+                const selected = selectedDate && isSameDay(day, selectedDate);
+                return (
+                  <button
+                    key={day.toISOString()}
+                    type="button"
+                    disabled={!available}
+                    onClick={() => setSelectedDate(day)}
+                    className={`rounded-lg py-2 text-sm transition-all ${
+                      selected
+                        ? "bg-or-500 font-semibold text-bordeaux-950"
+                        : available
+                          ? "text-bordeaux-900 hover:bg-or-50"
+                          : "text-gray-300 cursor-default"
+                    }`}
+                  >
+                    {day.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Créneaux horaires */}
+      {selectedDate && prestation && (
         <div>
           <label className={labelClass}>
-            Créneau horaire préféré <span className="text-or-700">*</span>
+            <Clock size={14} className="mr-1 inline" />
+            Créneau horaire <span className="text-or-700">*</span>
           </label>
-          <select
-            name="timeslot"
-            required
-            defaultValue=""
-            className={inputClass}
-          >
-            <option value="" disabled className="text-gray-400">
-              Choisir un créneau
-            </option>
-            <option value="matin">Matin (9h – 12h)</option>
-            <option value="apres-midi">Après-midi (13h – 17h)</option>
-            <option value="soir">Soir (17h – 20h)</option>
-          </select>
+          {slots.length === 0 ? (
+            <p className="text-sm text-bordeaux-900/60">
+              Aucun créneau disponible ce jour. Essayez une autre date.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {slots.map((slot) => (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => setSelectedSlot(slot)}
+                  className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+                    selectedSlot === slot
+                      ? "border-or-500 bg-or-500 text-bordeaux-950"
+                      : "border-bordeaux-200 text-bordeaux-900 hover:border-or-300 hover:bg-or-50"
+                  }`}
+                >
+                  {formatTime(parseTime(slot))}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Lieu */}
       <fieldset>
@@ -110,8 +405,9 @@ export function ReservationForm() {
             <input
               type="radio"
               name="location"
-              value="chez-naea"
-              defaultChecked
+              value="chez_naea"
+              checked={lieu === "chez_naea"}
+              onChange={() => setLieu("chez_naea")}
               className="accent-or-500"
             />
             Chez Naéa, Nantes
@@ -121,6 +417,8 @@ export function ReservationForm() {
               type="radio"
               name="location"
               value="domicile"
+              checked={lieu === "domicile"}
+              onChange={() => setLieu("domicile")}
               className="accent-or-500"
             />
             À mon domicile
@@ -135,9 +433,10 @@ export function ReservationForm() {
             Prénom <span className="text-or-700">*</span>
           </label>
           <input
-            name="firstName"
             type="text"
             required
+            value={prenom}
+            onChange={(e) => setPrenom(e.target.value)}
             className={inputClass}
           />
         </div>
@@ -146,9 +445,10 @@ export function ReservationForm() {
             Nom <span className="text-or-700">*</span>
           </label>
           <input
-            name="lastName"
             type="text"
             required
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
             className={inputClass}
           />
         </div>
@@ -161,9 +461,10 @@ export function ReservationForm() {
             Téléphone <span className="text-or-700">*</span>
           </label>
           <input
-            name="phone"
             type="tel"
             required
+            value={telephone}
+            onChange={(e) => setTelephone(e.target.value)}
             className={inputClass}
           />
         </div>
@@ -172,22 +473,13 @@ export function ReservationForm() {
             Email <span className="text-or-700">*</span>
           </label>
           <input
-            name="email"
             type="email"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className={inputClass}
           />
         </div>
-      </div>
-
-      {/* Mode de paiement */}
-      <div>
-        <label className={labelClass}>Mode de paiement préféré</label>
-        <select name="payment" defaultValue="especes" className={inputClass}>
-          <option value="especes">Espèces</option>
-          <option value="virement">Virement</option>
-          <option value="paypal">PayPal</option>
-        </select>
       </div>
 
       {/* Message */}
@@ -196,24 +488,42 @@ export function ReservationForm() {
           Message complémentaire (optionnel)
         </label>
         <textarea
-          name="message"
           rows={3}
-          placeholder="Précisez vos disponibilités, questions, attentes…"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Précisez vos disponibilités, questions, attentes..."
           className={`${inputClass} resize-none`}
         />
       </div>
 
-      {/* Submit — shimmer doré */}
+      {/* Récapitulatif */}
+      {prestation && selectedDate && selectedSlot && (
+        <div className="rounded-lg border border-or-200 bg-or-50/50 px-4 py-3">
+          <p className="text-sm font-medium text-bordeaux-900">Récapitulatif</p>
+          <p className="mt-1 text-sm text-bordeaux-900/80">
+            {prestation.nom} — {prestation.prix} € — Le{" "}
+            {selectedDate.toLocaleDateString("fr-FR", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            })}{" "}
+            à {formatTime(parseTime(selectedSlot))} —{" "}
+            {lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}
+          </p>
+        </div>
+      )}
+
+      {/* Submit */}
       <button
         type="submit"
-        disabled={status === "loading"}
+        disabled={status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot}
         className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:opacity-50"
       >
         <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
         <span className="pointer-events-none absolute inset-0 rounded-full bg-or-300/0 transition-colors group-hover:bg-or-300/20" />
         <Calendar size={16} className="relative z-10" />
         <span className="relative z-10">
-          {status === "loading" ? "Envoi…" : "Demander mon RDV"}
+          {status === "loading" ? "Envoi..." : "Demander mon RDV"}
         </span>
       </button>
 
@@ -223,8 +533,7 @@ export function ReservationForm() {
 
       {status === "error" && (
         <p className="text-center text-sm text-bordeaux-700">
-          Une erreur est survenue. Vous pouvez aussi me contacter sur Instagram
-          @naea_beauty.
+          {errorMsg || "Une erreur est survenue."} Vous pouvez aussi me contacter sur Instagram @naea_beauty.
         </p>
       )}
     </form>
