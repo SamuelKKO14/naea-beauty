@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import { X, ExternalLink, Save, Search, CheckCircle, Bell } from "lucide-react";
 import type { Reservation, StatutReservation } from "@/lib/types";
@@ -47,7 +47,7 @@ export default function ReservationsPage() {
   const [editNotes, setEditNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const load = useCallback(async () => {
     let query = supabase
@@ -77,6 +77,9 @@ export default function ReservationsPage() {
     setLoading(false);
   }, [filterStatut, filterDate]);
 
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
   useEffect(() => {
     load();
   }, [load]);
@@ -89,18 +92,21 @@ export default function ReservationsPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "reservations" },
         (payload) => {
-          load();
+          console.log("Realtime event (reservations):", payload);
+          loadRef.current();
           if (payload.eventType === "INSERT") {
             setToast(true);
             setTimeout(() => setToast(false), 5000);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime status (reservations):", status);
+      });
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [supabase]);
 
   function openDetail(r: ReservationRow) {
     setSelected(r);

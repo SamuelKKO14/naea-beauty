@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import {
   CalendarCheck,
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(false);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const load = useCallback(async () => {
     const now = new Date();
@@ -120,6 +120,9 @@ export default function AdminDashboard() {
     setLoading(false);
   }, []);
 
+  const loadRef = useRef(load);
+  loadRef.current = load;
+
   useEffect(() => {
     load();
   }, [load]);
@@ -132,18 +135,21 @@ export default function AdminDashboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "reservations" },
         (payload) => {
-          load();
+          console.log("Realtime event (dashboard):", payload);
+          loadRef.current();
           if (payload.eventType === "INSERT") {
             setToast(true);
             setTimeout(() => setToast(false), 5000);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime status (dashboard):", status);
+      });
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [supabase]);
 
   if (loading) {
     return (
