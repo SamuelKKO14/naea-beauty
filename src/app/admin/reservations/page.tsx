@@ -120,10 +120,10 @@ export default function ReservationsPage() {
         <select
           value={filterStatut}
           onChange={(e) => setFilterStatut(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white"
         >
           {STATUTS.map((s) => (
-            <option key={s.value} value={s.value}>
+            <option key={s.value} value={s.value} className="text-gray-900">
               {s.label}
             </option>
           ))}
@@ -132,12 +132,12 @@ export default function ReservationsPage() {
           type="date"
           value={filterDate}
           onChange={(e) => setFilterDate(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white [color-scheme:dark]"
         />
         {filterDate && (
           <button
             onClick={() => setFilterDate("")}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-white/60 hover:text-white"
           >
             Effacer la date
           </button>

@@ -111,7 +111,7 @@ export default function ClientsPage() {
       <div className="space-y-6">
         <button
           onClick={() => setSelectedClient(null)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700"
+          className="flex items-center gap-1.5 text-sm text-white/60 hover:text-white"
         >
           <ArrowLeft size={16} />
           Retour à la liste
@@ -217,14 +217,14 @@ export default function ClientsPage() {
       <div className="relative max-w-sm">
         <Search
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
         />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher par nom ou email…"
-          className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm"
+          placeholder="Rechercher par nom ou email..."
+          className="w-full rounded-lg border border-white/20 bg-white/10 py-2 pl-9 pr-3 text-sm text-white placeholder:text-white/50"
         />
       </div>
 

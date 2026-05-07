@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Image from "next/image";
 import { Menu, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/admin/sidebar";
@@ -88,10 +89,19 @@ export default function AdminLayout({
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-sm font-semibold text-white/80">
-              Naéa Beauty{" "}
-              <span className="font-normal text-white/40">— Admin</span>
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <Image
+                src="/logo.png"
+                alt="Naéa Beauty"
+                width={32}
+                height={32}
+                className="h-8 w-8 rounded-full object-cover"
+              />
+              <h1 className="text-sm font-semibold text-white/80">
+                Naéa Beauty{" "}
+                <span className="font-normal text-white/40">— Admin</span>
+              </h1>
+            </div>
           </div>
           <button
             onClick={handleLogout}
