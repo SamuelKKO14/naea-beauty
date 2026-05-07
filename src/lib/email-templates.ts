@@ -23,8 +23,8 @@ function layout(content: string) {
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${BLANC};border-radius:12px;overflow:hidden;border:1px solid ${OR_CLAIR};">
   <!-- Header -->
   <tr>
-    <td style="background-color:#3D0F1E;padding:0;text-align:center;height:120px;line-height:120px;">
-      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#C9A84C;font-weight:700;letter-spacing:1px;vertical-align:middle;">Na\u00E9a Beauty</span>
+    <td style="background-color:#6e1f3c;padding:0;text-align:center;height:120px;line-height:120px;">
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#fbf6ef;font-weight:700;letter-spacing:1px;vertical-align:middle;">Na\u00E9a Beauty</span>
     </td>
   </tr>
   <!-- Espace -->
