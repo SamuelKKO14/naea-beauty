@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import { confirmationClienteHTML } from "@/lib/email-templates";
 
 export async function POST(request: Request) {
@@ -49,15 +49,17 @@ export async function POST(request: Request) {
       consignes_pre_soin: paramConsignes?.valeur || null,
     });
 
-    await resend.emails.send({
-      from: "Naéa Beauty <onboarding@resend.dev>",
+    const result = await getResend().emails.send({
+      from: "Naéa Beauty <contact@naeabeauty.beauty>",
       to: clientEmail,
       subject: "Votre rendez-vous Naéa Beauty est confirmé ✨",
       html,
     });
+    console.log("[CONFIRM] Email confirmation result:", JSON.stringify(result));
 
     return Response.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("[CONFIRM] Email confirmation error:", JSON.stringify(error));
     return Response.json({ error: "Erreur lors de l'envoi de l'email." }, { status: 500 });
   }
 }

@@ -220,10 +220,14 @@ export function ReservationForm() {
   }, [calMonth]);
 
   // --- Submit ---
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!selectedPrestation || !selectedDate || !selectedSlot || !prenom || !nom || !email || !telephone) return;
 
+    setIsSubmitting(true);
     setStatus("loading");
     setErrorMsg("");
 
@@ -258,6 +262,8 @@ export function ReservationForm() {
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Une erreur est survenue.");
       setStatus("error");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -636,8 +642,8 @@ export function ReservationForm() {
       {/* Submit */}
       <button
         type="submit"
-        disabled={status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot}
-        className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:opacity-50"
+        disabled={isSubmitting || status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot}
+        className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
         <span className="pointer-events-none absolute inset-0 rounded-full bg-or-300/0 transition-colors group-hover:bg-or-300/20" />

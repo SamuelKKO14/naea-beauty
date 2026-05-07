@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { resend } from "@/lib/resend";
+import { getResend } from "@/lib/resend";
 import {
   demandeReservationClienteHTML,
   nouvelleReservationAdminHTML,
@@ -38,16 +38,29 @@ export async function POST(request: Request) {
       return Response.json({ error: "Prestation introuvable ou inactive." }, { status: 400 });
     }
 
-    // --- Vérifier que le créneau n'est pas déjà pris ---
-    const { data: existing } = await supabase
+    // --- Vérifier doublon exact : même email + date + heure ---
+    const emailNormEarly = email.trim().toLowerCase();
+    const { data: duplicate } = await supabase
       .from("reservations")
-      .select("id")
+      .select("id, montant_total, montant_acompte, client:clients(email)")
       .eq("date_rdv", date_rdv)
       .eq("heure_rdv", heure_rdv)
       .not("statut", "in", '("annulee","no_show")')
-      .limit(1);
+      .limit(10);
 
-    if (existing && existing.length > 0) {
+    if (duplicate && duplicate.length > 0) {
+      const existingForClient = duplicate.find(
+        (r: any) => r.client?.email === emailNormEarly
+      );
+      if (existingForClient) {
+        return Response.json({
+          success: true,
+          reservation_id: existingForClient.id,
+          montant_total: existingForClient.montant_total,
+          montant_acompte: existingForClient.montant_acompte,
+        });
+      }
+      // Créneau pris par quelqu'un d'autre
       return Response.json({ error: "Ce créneau est déjà réservé." }, { status: 409 });
     }
 
@@ -141,8 +154,8 @@ export async function POST(request: Request) {
 
     // --- Email récap à la cliente ---
     try {
-      await resend.emails.send({
-        from: "Naéa Beauty <onboarding@resend.dev>",
+      const clientEmailResult = await getResend().emails.send({
+        from: "Naéa Beauty <contact@naeabeauty.beauty>",
         to: emailNorm,
         subject: "Votre demande de rendez-vous Naéa Beauty",
         html: demandeReservationClienteHTML({
@@ -156,16 +169,16 @@ export async function POST(request: Request) {
           iban: params.iban || null,
         }),
       });
-    } catch {
-      // Ne pas bloquer la réservation si l'email échoue
-      console.error("[BOOKING] Échec envoi email cliente");
+      console.log("[BOOKING] Email cliente result:", JSON.stringify(clientEmailResult));
+    } catch (error) {
+      console.error("[BOOKING] Email cliente error:", JSON.stringify(error));
     }
 
     // --- Email notification à l'admin ---
     if (params.email_notification) {
       try {
-        await resend.emails.send({
-          from: "Naéa Beauty <onboarding@resend.dev>",
+        const adminEmailResult = await getResend().emails.send({
+          from: "Naéa Beauty <contact@naeabeauty.beauty>",
           to: params.email_notification,
           subject: `🔔 Nouvelle réservation — ${prenomTrimmed} ${nomTrimmed} — ${prestation.nom}`,
           html: nouvelleReservationAdminHTML({
@@ -183,8 +196,9 @@ export async function POST(request: Request) {
             backoffice_url: `${siteUrl}/admin/reservations`,
           }),
         });
-      } catch {
-        console.error("[BOOKING] Échec envoi email admin");
+        console.log("[BOOKING] Email admin result:", JSON.stringify(adminEmailResult));
+      } catch (error) {
+        console.error("[BOOKING] Email admin error:", JSON.stringify(error));
       }
     }
 
