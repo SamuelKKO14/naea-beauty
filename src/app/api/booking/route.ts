@@ -1,4 +1,9 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { resend } from "@/lib/resend";
+import {
+  demandeReservationClienteHTML,
+  nouvelleReservationAdminHTML,
+} from "@/lib/email-templates";
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +30,7 @@ export async function POST(request: Request) {
     // --- Vérifier que la prestation existe et est active ---
     const { data: prestation } = await supabase
       .from("prestations")
-      .select("id, prix, duree_minutes, actif")
+      .select("id, nom, prix, duree_minutes, actif")
       .eq("id", prestation_id)
       .single();
 
@@ -117,6 +122,70 @@ export async function POST(request: Request) {
 
     if (resError || !reservation) {
       return Response.json({ error: "Erreur lors de la création de la réservation." }, { status: 500 });
+    }
+
+    // --- Récupérer les paramètres pour les emails ---
+    const { data: allParams } = await supabase
+      .from("parametres")
+      .select("cle, valeur")
+      .in("cle", ["email_notification", "paypal_email", "iban", "site_url"]);
+
+    const params: Record<string, string> = {};
+    for (const p of allParams || []) {
+      params[p.cle] = p.valeur;
+    }
+
+    const siteUrl = params.site_url || "";
+    const prenomTrimmed = prenom.trim();
+    const nomTrimmed = nom.trim();
+
+    // --- Email récap à la cliente ---
+    try {
+      await resend.emails.send({
+        from: "Naéa Beauty <onboarding@resend.dev>",
+        to: emailNorm,
+        subject: "Votre demande de rendez-vous Naéa Beauty",
+        html: demandeReservationClienteHTML({
+          prenom: prenomTrimmed,
+          prestation_nom: prestation.nom,
+          date_rdv,
+          heure_rdv,
+          lieu,
+          montant_acompte,
+          paypal_email: params.paypal_email || null,
+          iban: params.iban || null,
+        }),
+      });
+    } catch {
+      // Ne pas bloquer la réservation si l'email échoue
+      console.error("[BOOKING] Échec envoi email cliente");
+    }
+
+    // --- Email notification à l'admin ---
+    if (params.email_notification) {
+      try {
+        await resend.emails.send({
+          from: "Naéa Beauty <onboarding@resend.dev>",
+          to: params.email_notification,
+          subject: `🔔 Nouvelle réservation — ${prenomTrimmed} ${nomTrimmed} — ${prestation.nom}`,
+          html: nouvelleReservationAdminHTML({
+            prenom: prenomTrimmed,
+            nom: nomTrimmed,
+            email: emailNorm,
+            telephone: telephone.trim(),
+            prestation_nom: prestation.nom,
+            prestation_prix: prestation.prix,
+            date_rdv,
+            heure_rdv,
+            lieu,
+            montant_acompte,
+            notes_client: notes_client?.trim() || null,
+            backoffice_url: `${siteUrl}/admin/reservations`,
+          }),
+        });
+      } catch {
+        console.error("[BOOKING] Échec envoi email admin");
+      }
     }
 
     return Response.json({

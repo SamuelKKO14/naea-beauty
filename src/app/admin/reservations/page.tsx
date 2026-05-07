@@ -107,6 +107,19 @@ export default function ReservationsPage() {
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
+
+    // Envoyer l'email de confirmation à la cliente
+    try {
+      await fetch("/api/confirm-booking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservation_id: id }),
+      });
+    } catch {
+      // Ne pas bloquer le flow si l'email échoue
+      console.error("Échec envoi email confirmation");
+    }
+
     setSelected(null);
     load();
   }
