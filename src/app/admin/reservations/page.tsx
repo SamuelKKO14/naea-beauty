@@ -145,7 +145,7 @@ export default function ReservationsPage() {
       </div>
 
       {/* Tableau */}
-      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -221,7 +221,7 @@ export default function ReservationsPage() {
       {/* Modale détail */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-2xl">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Détail réservation
@@ -350,7 +350,7 @@ export default function ReservationsPage() {
                 <button
                   onClick={saveDetail}
                   disabled={saving}
-                  className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
                 >
                   <Save size={14} />
                   {saving ? "Sauvegarde…" : "Sauvegarder"}

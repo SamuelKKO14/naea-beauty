@@ -79,7 +79,7 @@ export default function DisponibilitesPage() {
       <h2 className="text-2xl font-bold text-white">Disponibilités</h2>
 
       {/* Horaires par jour */}
-      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-100 px-5 py-4">
           <h3 className="font-semibold text-gray-900">Horaires hebdomadaires</h3>
         </div>
@@ -126,7 +126,7 @@ export default function DisponibilitesPage() {
           <button
             onClick={saveDispos}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
           >
             <Save size={14} />
             {saving ? "Sauvegarde…" : "Enregistrer les horaires"}
@@ -135,7 +135,7 @@ export default function DisponibilitesPage() {
       </div>
 
       {/* Indisponibilités */}
-      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-100 px-5 py-4">
           <h3 className="font-semibold text-gray-900">Indisponibilités</h3>
         </div>
@@ -184,7 +184,7 @@ export default function DisponibilitesPage() {
           </div>
           <button
             onClick={addIndispo}
-            className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30"
+            className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800"
           >
             <Plus size={14} />
             Ajouter

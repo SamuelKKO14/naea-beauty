@@ -307,7 +307,7 @@ export default function FinancePage() {
       {/* ── Graphiques ── */}
       <div className="grid gap-6 xl:grid-cols-3">
         {/* CA mensuel */}
-        <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg p-5 xl:col-span-2">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5 xl:col-span-2">
           <h3 className="mb-4 text-sm font-semibold text-gray-900">
             CA mensuel (6 derniers mois)
           </h3>
@@ -326,7 +326,7 @@ export default function FinancePage() {
         </div>
 
         {/* Répartition par prestation */}
-        <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg p-5">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
           <h3 className="mb-4 text-sm font-semibold text-gray-900">
             CA par prestation
           </h3>
@@ -368,7 +368,7 @@ export default function FinancePage() {
       </div>
 
       {/* RDV par semaine */}
-      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg p-5">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
         <h3 className="mb-4 text-sm font-semibold text-gray-900">
           RDV par semaine (8 dernières semaines)
         </h3>
@@ -391,7 +391,7 @@ export default function FinancePage() {
       </div>
 
       {/* ── Solde & Encaissements ── */}
-      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-100 px-5 py-4">
           <h3 className="font-semibold text-gray-900">
             Solde & Encaissements
@@ -437,7 +437,7 @@ export default function FinancePage() {
 
       {/* ── Acomptes non-remboursables ── */}
       {annulationsAcompte.length > 0 && (
-        <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-100 px-5 py-4">
             <h3 className="font-semibold text-gray-900">
               Acomptes conservés sur annulations
@@ -517,7 +517,7 @@ export default function FinancePage() {
       )}
 
       {/* ── Tableau des transactions ── */}
-      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
           <h3 className="font-semibold text-gray-900">Transactions</h3>
           <button
@@ -642,7 +642,7 @@ function KPI({
   color: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg p-5">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-5">
       <div className="flex items-center gap-3">
         <div className={`rounded-lg p-2.5 ${color}`}>
           <Icon size={20} />
