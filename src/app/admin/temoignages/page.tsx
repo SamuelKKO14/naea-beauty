@@ -58,17 +58,17 @@ export default function TemoignagesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Témoignages</h2>
+        <h2 className="text-2xl font-bold text-white">Témoignages</h2>
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800"
+          className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30"
         >
           <Plus size={14} />
           Ajouter
         </button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -144,7 +144,7 @@ export default function TemoignagesPage() {
       {/* Modale ajout */}
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+          <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white/80 shadow-2xl backdrop-blur-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Nouveau témoignage
@@ -234,7 +234,7 @@ export default function TemoignagesPage() {
               <button
                 onClick={addTemoignage}
                 disabled={saving}
-                className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30 disabled:opacity-50"
               >
                 <Save size={14} />
                 {saving ? "Ajout…" : "Ajouter"}

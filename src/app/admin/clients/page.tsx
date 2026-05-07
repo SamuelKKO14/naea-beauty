@@ -117,7 +117,7 @@ export default function ClientsPage() {
           Retour à la liste
         </button>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6">
+        <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg p-6">
           <h2 className="text-xl font-bold text-gray-900">
             {selectedClient.prenom} {selectedClient.nom}
           </h2>
@@ -143,7 +143,7 @@ export default function ClientsPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-200 bg-white">
+        <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
           <div className="border-b border-gray-100 px-5 py-4">
             <h3 className="font-semibold text-gray-900">
               Historique des réservations ({clientReservations.length})
@@ -211,7 +211,7 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Clients</h2>
+      <h2 className="text-2xl font-bold text-white">Clients</h2>
 
       {/* Recherche */}
       <div className="relative max-w-sm">
@@ -229,7 +229,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Tableau */}
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

@@ -165,14 +165,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+      <h2 className="text-2xl font-bold text-white">Dashboard</h2>
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="rounded-xl border border-gray-200 bg-white p-5"
+            className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg p-5"
           >
             <div className="flex items-center gap-3">
               <div className={`rounded-lg p-2.5 ${kpi.color}`}>
@@ -191,7 +191,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Dernières réservations */}
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
         <div className="border-b border-gray-100 px-5 py-4">
           <h3 className="font-semibold text-gray-900">
             Dernières réservations

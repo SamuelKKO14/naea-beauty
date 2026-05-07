@@ -55,9 +55,9 @@ export default function ParametresPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Paramètres</h2>
+      <h2 className="text-2xl font-bold text-white">Paramètres</h2>
 
-      <div className="rounded-xl border border-gray-200 bg-white">
+      <div className="rounded-xl border border-white/20 bg-white/70 backdrop-blur-lg shadow-lg">
         <div className="divide-y divide-gray-50">
           {parametres.map((p) => {
             const isLongText =
@@ -101,7 +101,7 @@ export default function ParametresPage() {
           <button
             onClick={saveAll}
             disabled={saving}
-            className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-white/30 bg-white/20 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/30 disabled:opacity-50"
           >
             <Save size={14} />
             {saving ? "Sauvegarde…" : "Enregistrer tout"}
