@@ -332,7 +332,7 @@ export default function ReservationsPage() {
                   <p className="text-xs font-medium text-gray-500">
                     Message cliente
                   </p>
-                  <p className="mt-1 text-sm text-gray-700">
+                  <p className="mt-1 max-w-full text-sm text-gray-700" style={{ wordBreak: "break-all", overflowWrap: "break-word", whiteSpace: "pre-wrap" }}>
                     {selected.notes_client}
                   </p>
                 </div>
