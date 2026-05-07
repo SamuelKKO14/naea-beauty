@@ -23,9 +23,8 @@ function layout(content: string) {
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${BLANC};border-radius:12px;overflow:hidden;border:1px solid ${OR_CLAIR};">
   <!-- Header -->
   <tr>
-    <td style="background-color:#1A0A10;padding:32px 40px 24px;text-align:center;">
-      <img src="https://naeabeauty.beauty/logo.png" alt="Naéa Beauty" height="50" style="display:block;margin:0 auto 12px auto;height:50px;width:auto;" />
-      <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F5E6D0;font-weight:700;letter-spacing:1px;">Na\u00E9a Beauty</p>
+    <td style="background-color:#3D0F1E;padding:0;text-align:center;height:120px;line-height:120px;">
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#C9A84C;font-weight:700;letter-spacing:1px;vertical-align:middle;">Na\u00E9a Beauty</span>
     </td>
   </tr>
   <!-- Espace -->
