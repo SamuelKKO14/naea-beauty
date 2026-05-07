@@ -1,34 +1,50 @@
-const BORDEAUX = "#722F37";
-const OR = "#C8A951";
-const GRIS_TEXTE = "#333333";
-const GRIS_CLAIR = "#666666";
+// Couleurs Naéa Beauty
+const BORDEAUX_950 = "#3D0F1E";
+const BORDEAUX_800 = "#7A1F3D";
+const OR = "#C9A84C";
+const OR_CLAIR = "#E8D5B5";
+const CREAM = "#FFF8F0";
+const BLANC = "#FFFFFF";
+const GRIS_SEC = "#888888";
+
+const FONT_TITRE = "Georgia, 'Times New Roman', serif";
+const FONT_CORPS = "Arial, Helvetica, sans-serif";
+
+const LOGO_URL = "https://naeabeauty.beauty/logo.png";
 
 function layout(content: string) {
   return `<!DOCTYPE html>
 <html lang="fr">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,Helvetica,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:20px 0;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="${LOGO_URL}">
+</head>
+<body style="margin:0;padding:0;background-color:${CREAM};font-family:${FONT_CORPS};">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:${CREAM};padding:24px 0;">
 <tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;">
-  <!-- Header -->
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${BLANC};border-radius:12px;overflow:hidden;border:1px solid ${OR_CLAIR};">
+  <!-- Header avec logo -->
   <tr>
-    <td style="background-color:${BORDEAUX};padding:30px 40px;text-align:center;">
-      <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:1px;">Naea Beauty</h1>
-      <p style="margin:6px 0 0;color:${OR};font-size:13px;letter-spacing:2px;text-transform:uppercase;">Beaute du regard & du sourire</p>
+    <td style="background-color:${BORDEAUX_950};padding:28px 40px;text-align:center;">
+      <img src="${LOGO_URL}" alt="Naéa Beauty" height="60" style="height:60px;width:auto;display:inline-block;" />
     </td>
   </tr>
+  <!-- Espace -->
+  <tr><td style="height:24px;"></td></tr>
   <!-- Body -->
   <tr>
-    <td style="padding:35px 40px;color:${GRIS_TEXTE};font-size:15px;line-height:1.7;">
+    <td style="padding:0 40px 35px;color:${BORDEAUX_950};font-size:15px;line-height:1.7;font-family:${FONT_CORPS};">
       ${content}
     </td>
   </tr>
   <!-- Footer -->
   <tr>
-    <td style="background-color:#faf9f7;padding:25px 40px;text-align:center;border-top:1px solid #eee;">
-      <p style="margin:0 0 6px;color:${GRIS_CLAIR};font-size:13px;">07 68 60 89 80 &middot; Instagram <a href="https://instagram.com/naea_beauty" style="color:${BORDEAUX};text-decoration:none;">@naea_beauty</a></p>
-      <p style="margin:0;color:#999;font-size:11px;">Naea Beauty &mdash; Tous droits reserves</p>
+    <td style="padding:32px 40px 28px;text-align:center;border-top:1px solid ${OR_CLAIR};">
+      <p style="margin:0 0 4px;font-family:${FONT_TITRE};font-size:18px;color:${BORDEAUX_800};font-weight:700;">Naéa Beauty</p>
+      <p style="margin:0 0 16px;font-size:12px;color:${GRIS_SEC};">Nantes — Beauté sur mesure</p>
+      <p style="margin:0 0 6px;color:${GRIS_SEC};font-size:13px;">07 68 60 89 80 &middot; Instagram <a href="https://instagram.com/naea_beauty" style="color:${OR};text-decoration:none;">@naea_beauty</a></p>
+      <p style="margin:0;color:#aaa;font-size:11px;">Naéa Beauty &mdash; Tous droits réservés</p>
     </td>
   </tr>
 </table>
@@ -40,8 +56,8 @@ function layout(content: string) {
 
 function infoRow(label: string, value: string) {
   return `<tr>
-    <td style="padding:8px 12px;font-size:14px;color:${GRIS_CLAIR};border-bottom:1px solid #f0f0f0;width:40%;">${label}</td>
-    <td style="padding:8px 12px;font-size:14px;color:${GRIS_TEXTE};border-bottom:1px solid #f0f0f0;font-weight:600;">${value}</td>
+    <td style="padding:8px 12px;font-size:14px;color:${BORDEAUX_800};opacity:0.7;border-bottom:1px solid ${OR_CLAIR};width:40%;font-family:${FONT_CORPS};">${label}</td>
+    <td style="padding:8px 12px;font-size:14px;color:${BORDEAUX_950};border-bottom:1px solid ${OR_CLAIR};font-weight:600;font-family:${FONT_CORPS};">${value}</td>
   </tr>`;
 }
 
@@ -51,7 +67,7 @@ function formatDate(dateStr: string) {
 }
 
 function formatLieu(lieu: string) {
-  return lieu === "chez_naea" ? "Chez Naea" : "A domicile";
+  return lieu === "chez_naea" ? "Chez Naéa" : "À domicile";
 }
 
 function formatPrice(n: number) {
@@ -77,36 +93,36 @@ export function confirmationClienteHTML(data: ConfirmationData): string {
   const reste = data.montant_total - data.montant_acompte;
 
   const consignesBlock = data.consignes_pre_soin
-    ? `<div style="margin:24px 0;padding:20px;background-color:#fdf8f0;border-left:4px solid ${OR};border-radius:6px;">
-        <p style="margin:0 0 8px;font-weight:700;color:${BORDEAUX};font-size:14px;">Consignes avant votre soin</p>
-        <p style="margin:0;font-size:14px;color:${GRIS_TEXTE};line-height:1.6;">${data.consignes_pre_soin.replace(/\n/g, "<br>")}</p>
+    ? `<div style="margin:24px 0;padding:20px;background-color:${CREAM};border-left:4px solid ${OR};border-radius:6px;">
+        <p style="margin:0 0 8px;font-weight:700;color:${BORDEAUX_800};font-size:14px;font-family:${FONT_TITRE};">Consignes avant votre soin</p>
+        <p style="margin:0;font-size:14px;color:${BORDEAUX_950};line-height:1.6;">${data.consignes_pre_soin.replace(/\n/g, "<br>")}</p>
       </div>`
     : "";
 
   return layout(`
     <p style="margin:0 0 20px;">Bonjour <strong>${data.prenom}</strong>,</p>
-    <p style="margin:0 0 24px;">Votre rendez-vous est confirme ! Nous avons bien recu votre acompte.</p>
+    <p style="margin:0 0 24px;">Votre rendez-vous est confirmé ! Nous avons bien reçu votre acompte.</p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:8px;overflow:hidden;margin-bottom:24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${OR_CLAIR};border-radius:8px;overflow:hidden;margin-bottom:24px;">
       ${infoRow("Prestation", data.prestation_nom)}
       ${infoRow("Date", formatDate(data.date_rdv))}
       ${infoRow("Heure", data.heure_rdv.slice(0, 5))}
       ${infoRow("Lieu", formatLieu(data.lieu))}
       ${infoRow("Montant total", formatPrice(data.montant_total))}
-      ${infoRow("Acompte verse", formatPrice(data.montant_acompte))}
-      ${infoRow("Reste a payer", formatPrice(reste))}
+      ${infoRow("Acompte versé", formatPrice(data.montant_acompte))}
+      ${infoRow("Reste à payer", formatPrice(reste))}
     </table>
 
     ${consignesBlock}
 
-    <div style="margin:24px 0;padding:16px 20px;background-color:#fff5f5;border-radius:8px;border:1px solid #f0dede;">
-      <p style="margin:0;font-size:13px;color:${GRIS_TEXTE};line-height:1.6;">
-        Si vous devez annuler, merci de nous prevenir au moins <strong>24h a l'avance</strong>. L'acompte est non-remboursable.
+    <div style="margin:24px 0;padding:16px 20px;background-color:${CREAM};border-radius:8px;border:1px solid ${OR_CLAIR};">
+      <p style="margin:0;font-size:13px;color:${BORDEAUX_950};line-height:1.6;">
+        Si vous devez annuler, merci de nous prévenir au moins <strong>24h à l'avance</strong>. L'acompte est non-remboursable.
       </p>
     </div>
 
-    <p style="margin:24px 0 0;font-size:15px;">A tres bientot,</p>
-    <p style="margin:4px 0 0;font-size:15px;color:${BORDEAUX};font-weight:700;">Naea Beauty</p>
+    <p style="margin:24px 0 0;font-size:15px;">À très bientôt,</p>
+    <p style="margin:4px 0 0;font-size:15px;color:${BORDEAUX_800};font-weight:700;font-family:${FONT_TITRE};">Naéa Beauty</p>
   `);
 }
 
@@ -131,20 +147,20 @@ type AdminNotifData = {
 
 export function nouvelleReservationAdminHTML(data: AdminNotifData): string {
   const notesBlock = data.notes_client
-    ? `<div style="margin:20px 0;padding:16px;background-color:#f9f9f9;border-radius:8px;">
-        <p style="margin:0 0 6px;font-weight:700;font-size:13px;color:${GRIS_CLAIR};">Message de la cliente</p>
-        <p style="margin:0;font-size:14px;color:${GRIS_TEXTE};line-height:1.5;">${data.notes_client.replace(/\n/g, "<br>")}</p>
+    ? `<div style="margin:20px 0;padding:16px;background-color:${CREAM};border-radius:8px;border:1px solid ${OR_CLAIR};">
+        <p style="margin:0 0 6px;font-weight:700;font-size:13px;color:${BORDEAUX_800};opacity:0.7;">Message de la cliente</p>
+        <p style="margin:0;font-size:14px;color:${BORDEAUX_950};line-height:1.5;">${data.notes_client.replace(/\n/g, "<br>")}</p>
       </div>`
     : "";
 
   return layout(`
-    <p style="margin:0 0 20px;font-size:16px;font-weight:700;color:${BORDEAUX};">Nouvelle reservation !</p>
+    <p style="margin:0 0 20px;font-size:18px;font-weight:700;color:${BORDEAUX_800};font-family:${FONT_TITRE};">Nouvelle réservation !</p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:8px;overflow:hidden;margin-bottom:20px;">
-      ${infoRow("Prenom", data.prenom)}
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${OR_CLAIR};border-radius:8px;overflow:hidden;margin-bottom:20px;">
+      ${infoRow("Prénom", data.prenom)}
       ${infoRow("Nom", data.nom)}
       ${infoRow("Email", data.email)}
-      ${infoRow("Telephone", data.telephone)}
+      ${infoRow("Téléphone", data.telephone)}
       ${infoRow("Prestation", data.prestation_nom)}
       ${infoRow("Prix", formatPrice(data.prestation_prix))}
       ${infoRow("Date", formatDate(data.date_rdv))}
@@ -157,7 +173,7 @@ export function nouvelleReservationAdminHTML(data: AdminNotifData): string {
     ${notesBlock}
 
     <div style="text-align:center;margin:24px 0;">
-      <a href="${data.backoffice_url}" style="display:inline-block;background-color:${BORDEAUX};color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">Voir dans le back-office</a>
+      <a href="${data.backoffice_url}" style="display:inline-block;background-color:${OR};color:${BLANC};padding:12px 32px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;font-family:${FONT_CORPS};">Voir dans le back-office</a>
     </div>
   `);
 }
@@ -182,15 +198,15 @@ export function demandeReservationClienteHTML(data: DemandeData): string {
 
   if (data.paypal_email || data.iban) {
     const paypalLine = data.paypal_email
-      ? `<p style="margin:0 0 8px;font-size:14px;"><strong>PayPal :</strong> ${data.paypal_email}</p>`
+      ? `<p style="margin:0 0 8px;font-size:14px;color:${BORDEAUX_950};"><strong>PayPal :</strong> ${data.paypal_email}</p>`
       : "";
     const ibanLine = data.iban
-      ? `<p style="margin:0;font-size:14px;"><strong>IBAN :</strong> ${data.iban}</p>`
+      ? `<p style="margin:0;font-size:14px;color:${BORDEAUX_950};"><strong>IBAN :</strong> ${data.iban}</p>`
       : "";
 
     paiementBlock = `
-      <div style="margin:20px 0;padding:20px;background-color:#fdf8f0;border-left:4px solid ${OR};border-radius:6px;">
-        <p style="margin:0 0 12px;font-weight:700;color:${BORDEAUX};font-size:14px;">Coordonnees de paiement</p>
+      <div style="margin:20px 0;padding:20px;background-color:${CREAM};border-left:4px solid ${OR};border-radius:6px;">
+        <p style="margin:0 0 12px;font-weight:700;color:${BORDEAUX_800};font-size:14px;font-family:${FONT_TITRE};">Coordonnées de paiement</p>
         ${paypalLine}
         ${ibanLine}
       </div>`;
@@ -198,9 +214,9 @@ export function demandeReservationClienteHTML(data: DemandeData): string {
 
   return layout(`
     <p style="margin:0 0 20px;">Bonjour <strong>${data.prenom}</strong>,</p>
-    <p style="margin:0 0 24px;">Nous avons bien recu votre demande de rendez-vous.</p>
+    <p style="margin:0 0 24px;">Nous avons bien reçu votre demande de rendez-vous.</p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #eee;border-radius:8px;overflow:hidden;margin-bottom:24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${OR_CLAIR};border-radius:8px;overflow:hidden;margin-bottom:24px;">
       ${infoRow("Prestation", data.prestation_nom)}
       ${infoRow("Date", formatDate(data.date_rdv))}
       ${infoRow("Heure", data.heure_rdv.slice(0, 5))}
@@ -211,9 +227,9 @@ export function demandeReservationClienteHTML(data: DemandeData): string {
 
     ${paiementBlock}
 
-    <p style="margin:20px 0 0;font-size:14px;color:${GRIS_CLAIR};">Votre rendez-vous sera confirme des reception de l'acompte.</p>
+    <p style="margin:20px 0 0;font-size:14px;color:${BORDEAUX_800};opacity:0.7;">Votre rendez-vous sera confirmé dès réception de l'acompte.</p>
 
-    <p style="margin:24px 0 0;font-size:15px;">A tres bientot,</p>
-    <p style="margin:4px 0 0;font-size:15px;color:${BORDEAUX};font-weight:700;">Naea Beauty</p>
+    <p style="margin:24px 0 0;font-size:15px;">À très bientôt,</p>
+    <p style="margin:4px 0 0;font-size:15px;color:${BORDEAUX_800};font-weight:700;font-family:${FONT_TITRE};">Naéa Beauty</p>
   `);
 }
