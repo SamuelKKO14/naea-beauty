@@ -6,6 +6,9 @@ import {
 } from "@/lib/email-templates";
 
 export async function POST(request: Request) {
+  console.log("=== BOOKING API CALLED ===");
+  console.log("RESEND_API_KEY exists:", !!process.env.RESEND_API_KEY);
+
   try {
     const body = await request.json();
     const {
@@ -20,8 +23,11 @@ export async function POST(request: Request) {
       notes_client,
     } = body;
 
+    console.log("=== BOOKING PAYLOAD ===", JSON.stringify({ prestation_id, date_rdv, heure_rdv, lieu, prenom, nom, email }));
+
     // --- Validation basique ---
     if (!prestation_id || !date_rdv || !heure_rdv || !lieu || !prenom || !nom || !email || !telephone) {
+      console.log("=== BOOKING VALIDATION FAILED ===");
       return Response.json({ error: "Champs obligatoires manquants." }, { status: 400 });
     }
 
@@ -35,11 +41,12 @@ export async function POST(request: Request) {
       .single();
 
     if (!prestation || !prestation.actif) {
+      console.log("=== BOOKING PRESTATION NOT FOUND ===");
       return Response.json({ error: "Prestation introuvable ou inactive." }, { status: 400 });
     }
 
     // --- Vérifier doublon exact : même email + date + heure ---
-    const emailNormEarly = email.trim().toLowerCase();
+    const emailNorm = email.trim().toLowerCase();
     const { data: duplicate } = await supabase
       .from("reservations")
       .select("id, montant_total, montant_acompte, client:clients(email)")
@@ -48,24 +55,27 @@ export async function POST(request: Request) {
       .not("statut", "in", '("annulee","no_show")')
       .limit(10);
 
+    console.log("=== DUPLICATE CHECK ===", JSON.stringify(duplicate));
+
     if (duplicate && duplicate.length > 0) {
       const existingForClient = duplicate.find(
-        (r: any) => r.client?.email === emailNormEarly
+        (r: any) => r.client?.email === emailNorm
       );
       if (existingForClient) {
+        console.log("=== DUPLICATE FOUND — RETURNING EXISTING, NO EMAILS SENT ===", existingForClient.id);
         return Response.json({
           success: true,
           reservation_id: existingForClient.id,
           montant_total: existingForClient.montant_total,
           montant_acompte: existingForClient.montant_acompte,
+          _debug: "duplicate_returned",
         });
       }
-      // Créneau pris par quelqu'un d'autre
+      console.log("=== SLOT TAKEN BY SOMEONE ELSE ===");
       return Response.json({ error: "Ce créneau est déjà réservé." }, { status: 409 });
     }
 
     // --- Find or create client ---
-    const emailNorm = email.trim().toLowerCase();
     const { data: existingClient } = await supabase
       .from("clients")
       .select("id")
@@ -76,7 +86,6 @@ export async function POST(request: Request) {
 
     if (existingClient && existingClient.length > 0) {
       client_id = existingClient[0].id;
-      // Mettre à jour nom/téléphone si changé
       await supabase
         .from("clients")
         .update({
@@ -99,6 +108,7 @@ export async function POST(request: Request) {
         .single();
 
       if (clientError || !newClient) {
+        console.log("=== CLIENT CREATION FAILED ===", JSON.stringify(clientError));
         return Response.json({ error: "Erreur lors de la création du client." }, { status: 500 });
       }
       client_id = newClient.id;
@@ -134,8 +144,11 @@ export async function POST(request: Request) {
       .single();
 
     if (resError || !reservation) {
+      console.log("=== RESERVATION CREATION FAILED ===", JSON.stringify(resError));
       return Response.json({ error: "Erreur lors de la création de la réservation." }, { status: 500 });
     }
+
+    console.log("=== RESERVATION CREATED ===", reservation.id);
 
     // --- Récupérer les paramètres pour les emails ---
     const { data: allParams } = await supabase
@@ -148,15 +161,21 @@ export async function POST(request: Request) {
       params[p.cle] = p.valeur;
     }
 
+    console.log("=== EMAIL PARAMS ===", JSON.stringify(params));
+
     const siteUrl = params.site_url || "";
     const prenomTrimmed = prenom.trim();
     const nomTrimmed = nom.trim();
 
     // --- Email récap à la cliente ---
+    let clientEmailResult: any = null;
+    let clientEmailError: any = null;
+    console.log("=== SENDING CLIENT EMAIL to:", emailNorm, "===");
     try {
-      const clientEmailResult = await getResend().emails.send({
+      clientEmailResult = await getResend().emails.send({
         from: "Naéa Beauty <contact@naeabeauty.beauty>",
         to: emailNorm,
+        replyTo: "samuelempire002@gmail.com",
         subject: "Votre demande de rendez-vous Naéa Beauty",
         html: demandeReservationClienteHTML({
           prenom: prenomTrimmed,
@@ -169,17 +188,23 @@ export async function POST(request: Request) {
           iban: params.iban || null,
         }),
       });
-      console.log("[BOOKING] Email cliente result:", JSON.stringify(clientEmailResult));
+      console.log("=== CLIENT EMAIL SENT ===", JSON.stringify(clientEmailResult));
     } catch (error) {
-      console.error("[BOOKING] Email cliente error:", JSON.stringify(error));
+      clientEmailError = error;
+      console.error("=== CLIENT EMAIL FAILED ===", JSON.stringify(error));
     }
 
     // --- Email notification à l'admin ---
+    let adminEmailResult: any = null;
+    let adminEmailError: any = null;
+    console.log("=== ADMIN EMAIL TARGET:", params.email_notification || "NONE", "===");
     if (params.email_notification) {
+      console.log("=== SENDING ADMIN EMAIL to:", params.email_notification, "===");
       try {
-        const adminEmailResult = await getResend().emails.send({
+        adminEmailResult = await getResend().emails.send({
           from: "Naéa Beauty <contact@naeabeauty.beauty>",
           to: params.email_notification,
+          replyTo: "samuelempire002@gmail.com",
           subject: `🔔 Nouvelle réservation — ${prenomTrimmed} ${nomTrimmed} — ${prestation.nom}`,
           html: nouvelleReservationAdminHTML({
             prenom: prenomTrimmed,
@@ -196,19 +221,29 @@ export async function POST(request: Request) {
             backoffice_url: `${siteUrl}/admin/reservations`,
           }),
         });
-        console.log("[BOOKING] Email admin result:", JSON.stringify(adminEmailResult));
+        console.log("=== ADMIN EMAIL SENT ===", JSON.stringify(adminEmailResult));
       } catch (error) {
-        console.error("[BOOKING] Email admin error:", JSON.stringify(error));
+        adminEmailError = error;
+        console.error("=== ADMIN EMAIL FAILED ===", JSON.stringify(error));
       }
     }
+
+    console.log("=== BOOKING COMPLETE ===");
 
     return Response.json({
       success: true,
       reservation_id: reservation.id,
       montant_total,
       montant_acompte,
+      emailResults: {
+        clientEmail: clientEmailResult,
+        clientEmailError: clientEmailError ? String(clientEmailError) : null,
+        adminEmail: adminEmailResult,
+        adminEmailError: adminEmailError ? String(adminEmailError) : null,
+      },
     });
-  } catch {
+  } catch (error) {
+    console.error("=== BOOKING GLOBAL ERROR ===", JSON.stringify(error));
     return Response.json({ error: "Erreur interne du serveur." }, { status: 500 });
   }
 }
