@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
-import { X, ExternalLink, Save, Search, CheckCircle } from "lucide-react";
+import { X, ExternalLink, Save, Search, CheckCircle, Bell } from "lucide-react";
 import type { Reservation, StatutReservation } from "@/lib/types";
 
 const STATUTS: { value: StatutReservation | "tous"; label: string }[] = [
@@ -46,6 +46,7 @@ export default function ReservationsPage() {
   const [editStatut, setEditStatut] = useState<StatutReservation>("en_attente");
   const [editNotes, setEditNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(false);
   const supabase = createClient();
 
   const load = useCallback(async () => {
@@ -78,6 +79,27 @@ export default function ReservationsPage() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  // Realtime : écouter les changements sur reservations
+  useEffect(() => {
+    const channel = supabase
+      .channel("reservations-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservations" },
+        (payload) => {
+          load();
+          if (payload.eventType === "INSERT") {
+            setToast(true);
+            setTimeout(() => setToast(false), 5000);
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [load]);
 
   function openDetail(r: ReservationRow) {
@@ -139,6 +161,14 @@ export default function ReservationsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg">
+          <Bell size={16} />
+          Nouvelle réservation !
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold text-white">Réservations</h2>
 
       {/* Filtres */}

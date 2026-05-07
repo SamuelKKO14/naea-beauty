@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import {
   CalendarCheck,
   CalendarDays,
   Clock,
   Euro,
+  Bell,
 } from "lucide-react";
 import type { Reservation } from "@/lib/types";
 
@@ -40,86 +41,109 @@ const STATUT_COLORS: Record<string, string> = {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(false);
   const supabase = createClient();
 
-  useEffect(() => {
-    async function load() {
-      const now = new Date();
-      const today = now.toISOString().split("T")[0];
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay() + 1);
-      const weekStart = startOfWeek.toISOString().split("T")[0];
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const load = useCallback(async () => {
+    const now = new Date();
+    const today = now.toISOString().split("T")[0];
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+    const weekStart = startOfWeek.toISOString().split("T")[0];
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
 
-      // RDV aujourd'hui
-      const { count: todayCount } = await supabase
-        .from("reservations")
-        .select("*", { count: "exact", head: true })
-        .eq("date_rdv", today)
-        .not("statut", "eq", "annulee");
+    // RDV aujourd'hui
+    const { count: todayCount } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("date_rdv", today)
+      .not("statut", "eq", "annulee");
 
-      // RDV cette semaine
-      const { count: weekCount } = await supabase
-        .from("reservations")
-        .select("*", { count: "exact", head: true })
-        .gte("date_rdv", weekStart)
-        .lte("date_rdv", today.slice(0, 8) + "31")
-        .not("statut", "eq", "annulee");
+    // RDV cette semaine
+    const { count: weekCount } = await supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .gte("date_rdv", weekStart)
+      .lte("date_rdv", today.slice(0, 8) + "31")
+      .not("statut", "eq", "annulee");
 
-      // CA du mois
-      const { data: monthData } = await supabase
-        .from("reservations")
-        .select("montant_acompte")
-        .gte("date_rdv", monthStart)
-        .eq("acompte_paye", true);
-      const monthRevenue = (monthData || []).reduce(
-        (sum, r) => sum + Number(r.montant_acompte || 0),
-        0
-      );
+    // CA du mois
+    const { data: monthData } = await supabase
+      .from("reservations")
+      .select("montant_acompte")
+      .gte("date_rdv", monthStart)
+      .eq("acompte_paye", true);
+    const monthRevenue = (monthData || []).reduce(
+      (sum, r) => sum + Number(r.montant_acompte || 0),
+      0
+    );
 
-      // Prochain RDV
-      const { data: nextData } = await supabase
-        .from("reservations")
-        .select("*, client:clients(prenom, nom), prestation:prestations(nom)")
-        .gte("date_rdv", today)
-        .in("statut", ["en_attente", "confirmee"])
-        .order("date_rdv", { ascending: true })
-        .order("heure_rdv", { ascending: true })
-        .limit(1);
+    // Prochain RDV
+    const { data: nextData } = await supabase
+      .from("reservations")
+      .select("*, client:clients(prenom, nom), prestation:prestations(nom)")
+      .gte("date_rdv", today)
+      .in("statut", ["en_attente", "confirmee"])
+      .order("date_rdv", { ascending: true })
+      .order("heure_rdv", { ascending: true })
+      .limit(1);
 
-      const nextRdv =
-        nextData && nextData[0]
-          ? {
-              ...nextData[0],
-              client_name: `${(nextData[0] as any).client?.prenom || ""} ${(nextData[0] as any).client?.nom || ""}`.trim(),
-              prestation_name: (nextData[0] as any).prestation?.nom || "",
-            }
-          : null;
+    const nextRdv =
+      nextData && nextData[0]
+        ? {
+            ...nextData[0],
+            client_name: `${(nextData[0] as any).client?.prenom || ""} ${(nextData[0] as any).client?.nom || ""}`.trim(),
+            prestation_name: (nextData[0] as any).prestation?.nom || "",
+          }
+        : null;
 
-      // 5 dernières réservations
-      const { data: recentData } = await supabase
-        .from("reservations")
-        .select("*, client:clients(prenom, nom), prestation:prestations(nom)")
-        .order("created_at", { ascending: false })
-        .limit(5);
+    // 5 dernières réservations
+    const { data: recentData } = await supabase
+      .from("reservations")
+      .select("*, client:clients(prenom, nom), prestation:prestations(nom)")
+      .order("created_at", { ascending: false })
+      .limit(5);
 
-      const recentReservations = (recentData || []).map((r: any) => ({
-        ...r,
-        client_name: `${r.client?.prenom || ""} ${r.client?.nom || ""}`.trim(),
-        prestation_name: r.prestation?.nom || "",
-      }));
+    const recentReservations = (recentData || []).map((r: any) => ({
+      ...r,
+      client_name: `${r.client?.prenom || ""} ${r.client?.nom || ""}`.trim(),
+      prestation_name: r.prestation?.nom || "",
+    }));
 
-      setStats({
-        todayCount: todayCount || 0,
-        weekCount: weekCount || 0,
-        monthRevenue,
-        nextRdv: nextRdv as any,
-        recentReservations,
-      });
-      setLoading(false);
-    }
-    load();
+    setStats({
+      todayCount: todayCount || 0,
+      weekCount: weekCount || 0,
+      monthRevenue,
+      nextRdv: nextRdv as any,
+      recentReservations,
+    });
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Realtime : écouter les changements sur reservations
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-reservations")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reservations" },
+        (payload) => {
+          load();
+          if (payload.eventType === "INSERT") {
+            setToast(true);
+            setTimeout(() => setToast(false), 5000);
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [load]);
 
   if (loading) {
     return (
@@ -165,6 +189,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg animate-in fade-in slide-in-from-top-2">
+          <Bell size={16} />
+          Nouvelle réservation !
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold text-white">Dashboard</h2>
 
       {/* KPIs */}
