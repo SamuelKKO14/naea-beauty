@@ -8,6 +8,7 @@ import {
   Clock,
   Heart,
   MapPin,
+  Phone,
   Sparkles,
   Check,
 } from "lucide-react";
@@ -553,6 +554,18 @@ export default function Home() {
                       <p className="text-or-100/70">
                         À mon domicile ou chez vous, sans supplément.
                       </p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Phone size={18} className="mt-0.5 shrink-0 text-or-400" />
+                    <div>
+                      <p className="font-semibold">Téléphone</p>
+                      <a
+                        href="tel:+33768608980"
+                        className="text-or-100/70 hover:text-or-300"
+                      >
+                        07 68 60 89 80
+                      </a>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Calendar, Check, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Prestation, Disponibilite, Indisponibilite } from "@/lib/types";
 
@@ -14,6 +14,12 @@ type BookedSlot = {
 };
 
 type Status = "idle" | "loading" | "success" | "error";
+
+type BookingResult = {
+  reservation_id: string;
+  montant_total: number;
+  montant_acompte: number;
+};
 
 const inputClass =
   "w-full rounded-lg border border-bordeaux-200 bg-white px-4 py-3 text-bordeaux-950 placeholder:text-gray-400 outline-none transition-all focus:border-or-500 focus:shadow-[0_0_0_3px_rgba(201,169,97,0.12)]";
@@ -53,6 +59,9 @@ function dateToStr(d: Date) {
 export function ReservationForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
+  const [showVirement, setShowVirement] = useState(false);
+  const [ibanCopied, setIbanCopied] = useState(false);
   const supabase = createClient();
 
   // Data
@@ -235,11 +244,16 @@ export function ReservationForm() {
         }),
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Erreur");
       }
 
+      setBookingResult({
+        reservation_id: data.reservation_id,
+        montant_total: data.montant_total,
+        montant_acompte: data.montant_acompte,
+      });
       setStatus("success");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Une erreur est survenue.");
@@ -247,20 +261,126 @@ export function ReservationForm() {
     }
   }
 
+  function copyIban() {
+    navigator.clipboard.writeText("FR7616798000010001423822381");
+    setIbanCopied(true);
+    setTimeout(() => setIbanCopied(false), 2000);
+  }
+
+  const shortId = bookingResult?.reservation_id?.slice(0, 8).toUpperCase() || "";
+
   // --- Success ---
-  if (status === "success") {
+  if (status === "success" && bookingResult && prestation && selectedDate) {
     return (
-      <div className="flex flex-col items-center py-10 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-or-100">
-          <Check className="text-or-700" size={32} />
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-or-100">
+            <Check className="text-or-700" size={32} />
+          </div>
+          <h3 className="mt-5 font-display text-2xl text-bordeaux-900">
+            Réservation enregistrée !
+          </h3>
+          <p className="mt-2 text-sm text-bordeaux-900/70">
+            Pour confirmer votre rendez-vous, versez l&apos;acompte de{" "}
+            <strong>{bookingResult.montant_acompte} €</strong>
+          </p>
         </div>
-        <h3 className="mt-6 font-display text-3xl text-bordeaux-900">
-          Demande reçue !
-        </h3>
-        <p className="mt-3 max-w-sm text-bordeaux-900/70">
-          Merci ! Je reviens vers vous dans la journée pour confirmer votre
-          rendez-vous.
-        </p>
+
+        {/* Récapitulatif */}
+        <div className="rounded-lg border border-or-200 bg-or-50/50 px-5 py-4">
+          <p className="text-sm font-semibold text-bordeaux-900">Récapitulatif</p>
+          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+            <dt className="text-bordeaux-900/60">Prestation</dt>
+            <dd className="text-bordeaux-900">{prestation.nom}</dd>
+            <dt className="text-bordeaux-900/60">Date</dt>
+            <dd className="text-bordeaux-900">
+              {selectedDate.toLocaleDateString("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}{" "}
+              à {formatTime(parseTime(selectedSlot))}
+            </dd>
+            <dt className="text-bordeaux-900/60">Lieu</dt>
+            <dd className="text-bordeaux-900">
+              {lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}
+            </dd>
+            <dt className="text-bordeaux-900/60">Montant total</dt>
+            <dd className="text-bordeaux-900">{bookingResult.montant_total} €</dd>
+            <dt className="text-bordeaux-900/60">Acompte à verser</dt>
+            <dd className="font-semibold text-bordeaux-900">{bookingResult.montant_acompte} € (50%)</dd>
+          </dl>
+        </div>
+
+        {/* Options de paiement */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* PayPal */}
+          <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
+            <h4 className="text-sm font-semibold text-bordeaux-900">PayPal</h4>
+            <a
+              href={`https://paypal.me/NAEABEAUTY/${bookingResult.montant_acompte}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:shadow-lg hover:shadow-or-500/30"
+            >
+              <CreditCard size={16} />
+              Payer par PayPal
+            </a>
+            <p className="mt-3 text-xs text-bordeaux-900/60">
+              Envoyez {bookingResult.montant_acompte} € et indiquez votre nom en message
+            </p>
+          </div>
+
+          {/* Virement */}
+          <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
+            <h4 className="text-sm font-semibold text-bordeaux-900">Virement bancaire</h4>
+            {!showVirement ? (
+              <button
+                type="button"
+                onClick={() => setShowVirement(true)}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border-2 border-bordeaux-200 px-6 py-3 text-sm font-semibold text-bordeaux-900 transition-all hover:border-bordeaux-400 hover:bg-bordeaux-50"
+              >
+                Payer par virement
+              </button>
+            ) : (
+              <div className="mt-3 space-y-2 text-sm">
+                <div className="rounded-lg bg-bordeaux-50/50 p-3 text-xs">
+                  <p><span className="text-bordeaux-900/60">Titulaire :</span> <strong>Amina Saydoullayeva</strong></p>
+                  <p className="mt-1"><span className="text-bordeaux-900/60">IBAN :</span> <strong className="font-mono">FR76 1679 8000 0100 0142 3822 381</strong></p>
+                  <p className="mt-1"><span className="text-bordeaux-900/60">BIC :</span> <strong className="font-mono">TRZOFR21XXX</strong></p>
+                  <p className="mt-1"><span className="text-bordeaux-900/60">Montant :</span> <strong>{bookingResult.montant_acompte} €</strong></p>
+                  <p className="mt-1"><span className="text-bordeaux-900/60">Référence :</span> <strong className="font-mono">NAEA-{shortId}</strong></p>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyIban}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-bordeaux-200 px-3 py-2 text-xs font-medium text-bordeaux-700 transition-colors hover:bg-bordeaux-50"
+                >
+                  <Copy size={12} />
+                  {ibanCopied ? "IBAN copié !" : "Copier l'IBAN"}
+                </button>
+                <p className="text-xs text-bordeaux-900/60">
+                  Votre RDV sera confirmé dès réception du virement (sous 24-48h)
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="space-y-3 text-center">
+          <p className="text-xs text-bordeaux-900/60">
+            Vous recevrez un email de confirmation dès que votre acompte est vérifié.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="text-sm font-medium text-bordeaux-700 underline underline-offset-2 hover:text-bordeaux-900"
+          >
+            Retour au site
+          </button>
+        </div>
       </div>
     );
   }

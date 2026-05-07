@@ -119,7 +119,12 @@ export async function POST(request: Request) {
       return Response.json({ error: "Erreur lors de la création de la réservation." }, { status: 500 });
     }
 
-    return Response.json({ success: true, reservation_id: reservation.id });
+    return Response.json({
+      success: true,
+      reservation_id: reservation.id,
+      montant_total,
+      montant_acompte,
+    });
   } catch {
     return Response.json({ error: "Erreur interne du serveur." }, { status: 500 });
   }

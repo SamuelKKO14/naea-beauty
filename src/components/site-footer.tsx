@@ -1,4 +1,4 @@
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 
 export function SiteFooter() {
@@ -66,6 +66,12 @@ export function SiteFooter() {
                 className="hover:text-or-300"
               >
                 TikTok
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Phone size={16} className="text-or-400" />
+              <a href="tel:+33768608980" className="hover:text-or-300">
+                07 68 60 89 80
               </a>
             </li>
             <li className="flex items-center gap-2">

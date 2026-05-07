@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
-import { X, ExternalLink, Save, Search } from "lucide-react";
+import { X, ExternalLink, Save, Search, CheckCircle } from "lucide-react";
 import type { Reservation, StatutReservation } from "@/lib/types";
 
 const STATUTS: { value: StatutReservation | "tous"; label: string }[] = [
@@ -94,6 +94,19 @@ export default function ReservationsPage() {
       .update({ statut: editStatut, notes_admin: editNotes, updated_at: new Date().toISOString() })
       .eq("id", selected.id);
     setSaving(false);
+    setSelected(null);
+    load();
+  }
+
+  async function markAcompteReceived(id: string) {
+    await supabase
+      .from("reservations")
+      .update({
+        acompte_paye: true,
+        statut: "confirmee",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
     setSelected(null);
     load();
   }
@@ -283,6 +296,23 @@ export default function ReservationsPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Bouton acompte */}
+              {!selected.acompte_paye && selected.statut === "en_attente" && (
+                <button
+                  onClick={() => markAcompteReceived(selected.id)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700"
+                >
+                  <CheckCircle size={16} />
+                  Marquer acompte reçu
+                </button>
+              )}
+              {selected.acompte_paye && (
+                <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700">
+                  <CheckCircle size={16} />
+                  Acompte reçu
+                </div>
+              )}
 
               {selected.notes_client && (
                 <div>
