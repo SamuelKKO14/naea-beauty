@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   title: "Naéa Beauty — Prestations beauté à Nantes",
   description:
     "Réhaussement de cils, Browlift et blanchiment dentaire à Nantes. Prenez rendez-vous avec Naéa Beauty, beauté sur-mesure à domicile.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
