@@ -35,7 +35,7 @@ export function SplashScreen() {
           transition={{ duration: 0.8 }}
         >
           <motion.h1
-            className="font-display text-4xl md:text-5xl"
+            className="font-display text-2xl sm:text-4xl md:text-5xl whitespace-nowrap text-center px-4"
             style={{ color: "#F5E6D0" }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
