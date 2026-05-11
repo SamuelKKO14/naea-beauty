@@ -123,11 +123,14 @@ export default function AdminDashboard() {
   const loadRef = useRef(load);
   loadRef.current = load;
 
+  // Debounce ref pour Realtime
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     load();
   }, [load]);
 
-  // Realtime : écouter les changements sur reservations
+  // Realtime : UN SEUL channel, re-fetch complet avec debounce 500ms
   useEffect(() => {
     const channel = supabase
       .channel("dashboard-reservations")
@@ -136,7 +139,10 @@ export default function AdminDashboard() {
         { event: "*", schema: "public", table: "reservations" },
         (payload) => {
           console.log("Realtime event (dashboard):", payload);
-          loadRef.current();
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => {
+            loadRef.current();
+          }, 500);
           if (payload.eventType === "INSERT") {
             setToast(true);
             setTimeout(() => setToast(false), 5000);
@@ -147,6 +153,7 @@ export default function AdminDashboard() {
         console.log("Realtime status (dashboard):", status);
       });
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase.removeChannel(channel);
     };
   }, [supabase]);

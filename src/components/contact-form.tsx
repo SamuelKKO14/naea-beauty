@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Prestation, Disponibilite, Indisponibilite } from "@/lib/types";
@@ -267,14 +267,15 @@ export function ReservationForm() {
     [isDateBaseAvailable, fullyBookedDates]
   );
 
-  // --- Submit ---
+  // --- Submit --- Anti double-submit : useRef + useState
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (isSubmitting) return;
+  async function handleSubmit() {
+    if (submittingRef.current) return;
     if (!selectedPrestation || !selectedDate || !selectedSlot || !prenom || !nom || !email || !telephone) return;
 
+    submittingRef.current = true;
     setIsSubmitting(true);
     setStatus("loading");
     setErrorMsg("");
@@ -311,6 +312,7 @@ export function ReservationForm() {
       setErrorMsg(err instanceof Error ? err.message : "Une erreur est survenue.");
       setStatus("error");
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   }
@@ -445,7 +447,7 @@ export function ReservationForm() {
     (calMonth.getFullYear() === today.getFullYear() && calMonth.getMonth() > today.getMonth());
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="space-y-5">
       <h3 className="font-display text-2xl text-bordeaux-900">
         Réserver votre rendez-vous
       </h3>
@@ -687,9 +689,10 @@ export function ReservationForm() {
         </div>
       )}
 
-      {/* Submit */}
+      {/* Submit — type="button" pour éviter double submit via form */}
       <button
-        type="submit"
+        type="button"
+        onClick={handleSubmit}
         disabled={isSubmitting || status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot}
         className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
@@ -710,6 +713,6 @@ export function ReservationForm() {
           {errorMsg || "Une erreur est survenue."} Vous pouvez aussi me contacter sur Instagram @naea_beauty.
         </p>
       )}
-    </form>
+    </div>
   );
 }

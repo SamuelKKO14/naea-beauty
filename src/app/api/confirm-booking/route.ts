@@ -4,9 +4,19 @@ import { confirmationClienteHTML } from "@/lib/email-templates";
 
 export async function POST(request: Request) {
   console.log("=== CONFIRM-BOOKING API CALLED ===");
-  console.log("RESEND_API_KEY exists:", !!process.env.RESEND_API_KEY);
 
   try {
+    // Vérifier l'authentification admin
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.warn("=== CONFIRM BOOKING DENIED — no authenticated user ===");
+      return Response.json({ error: "Non autorisé" }, { status: 401 });
+    }
+
+    console.log("=== CONFIRM BOOKING — admin:", user.email, "===");
+
     const { reservation_id } = await request.json();
 
     if (!reservation_id) {
@@ -15,8 +25,6 @@ export async function POST(request: Request) {
     }
 
     console.log("=== CONFIRM: reservation_id:", reservation_id, "===");
-
-    const supabase = await createServerSupabaseClient();
 
     // Récupérer la réservation avec client + prestation
     const { data: reservation } = await supabase

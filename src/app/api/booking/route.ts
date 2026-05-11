@@ -160,6 +160,10 @@ export async function POST(request: Request) {
 
     if (resError || !reservation) {
       console.log("=== RESERVATION CREATION FAILED ===", JSON.stringify(resError));
+      // Violation de contrainte unique → créneau déjà pris
+      if (resError?.code === "23505") {
+        return Response.json({ error: "Ce créneau est déjà pris. Veuillez en choisir un autre." }, { status: 409 });
+      }
       return Response.json({ error: "Erreur lors de la création de la réservation." }, { status: 500 });
     }
 
