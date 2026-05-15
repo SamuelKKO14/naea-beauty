@@ -280,7 +280,7 @@ export default function Home() {
       <HeroSection />
 
       {/* ── PRESTATIONS (pricing cards) ── */}
-      <AnimatedSection id="prestations" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-10">
+      <AnimatedSection id="prestations" className="relative z-10 mx-auto max-w-7xl px-6 py-14 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
             Nos soins
@@ -294,7 +294,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 md:gap-6">
           {SERVICES.map((s) => (
             <motion.article
               key={s.id}
@@ -359,7 +359,7 @@ export default function Home() {
       {/* ── AVANT / APRÈS ── */}
       <AnimatedSection
         id="avant-apres"
-        className="relative z-10 py-24"
+        className="relative z-10 py-14"
       >
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">
@@ -371,7 +371,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
             {[1, 2, 3, 4].map((n) => (
               <div key={n} className="flex flex-col items-center gap-3">
                 <BeforeAfterSlider
@@ -391,7 +391,7 @@ export default function Home() {
       {/* ── TÉMOIGNAGES ── */}
       <AnimatedSection
         id="temoignages"
-        className="relative z-10 py-24"
+        className="relative z-10 py-14"
       >
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">
@@ -406,14 +406,14 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-8">
             <TestimonialsCarousel />
           </div>
         </div>
       </AnimatedSection>
 
       {/* ── À PROPOS ── */}
-      <AnimatedSection id="apropos" className="relative z-10 py-14">
+      <AnimatedSection id="apropos" className="relative z-10 py-10">
         <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-[auto_1fr] lg:px-10">
           <div className="relative mx-auto max-w-sm">
             <div className="aspect-square overflow-hidden rounded-[2rem] shadow-xl shadow-bordeaux-200/40">
@@ -463,7 +463,7 @@ export default function Home() {
       {/* ── RÉSERVER ── */}
       <AnimatedSection
         id="reserver"
-        className="relative z-10 border-t border-bordeaux-100/60 bg-gradient-to-b from-bordeaux-50/50 to-cream py-24"
+        className="relative z-10 border-t border-bordeaux-100/60 bg-gradient-to-b from-bordeaux-50/50 to-cream py-14"
       >
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">
@@ -479,7 +479,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="mx-auto mt-14 grid max-w-6xl gap-12 lg:grid-cols-[1.4fr_1fr]">
+          <div className="mx-auto mt-8 grid max-w-6xl gap-12 lg:grid-cols-[1.4fr_1fr]">
             <div className="rounded-2xl border border-bordeaux-100/60 bg-white p-8 shadow-sm md:p-10">
               <ReservationForm />
             </div>
