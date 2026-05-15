@@ -26,7 +26,7 @@ export const SERVICES: Service[] = [
     duration: "1h",
     price: 25,
     description:
-      "Le réhaussement, sublimé par une teinture qui intensifie le regard sans mascara.",
+      "Le réhaussement, sublimé par une teinture qui intensifie votre regard. Fini le mascara.",
     image: "/services/cils-teinture.png",
   },
   {
@@ -36,7 +36,7 @@ export const SERVICES: Service[] = [
     duration: "1h",
     price: 20,
     description:
-      "Sourcils redessinés, lissés et structurés pour un effet « laminé » durable.",
+      "Vos sourcils redessinés, lissés et structurés pour un effet laminé naturel et durable.",
     image: "/services/browlift.png",
   },
   {
@@ -56,7 +56,7 @@ export const SERVICES: Service[] = [
     duration: "1h",
     price: 50,
     description:
-      "Une séance pour un sourire éclatant, en toute sécurité — résultat visible immédiatement.",
+      "Un sourire éclatant en une seule séance, en toute sécurité. Résultat visible immédiatement.",
     image: "/services/dents.png",
   },
   {

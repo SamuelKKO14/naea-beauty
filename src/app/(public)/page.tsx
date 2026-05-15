@@ -210,7 +210,7 @@ function HeroSection() {
               <br />
               votre regard,
               <br />
-              <span className="italic text-or-300">éveillez votre éclat.</span>
+              <span className="italic text-or-300">révélez votre beauté.</span>
             </motion.h1>
 
             <motion.p
@@ -219,8 +219,8 @@ function HeroSection() {
               transition={{ delay: 0.8, duration: 0.6 }}
               className="mt-6 max-w-md text-lg leading-relaxed text-white/80"
             >
-              Réhaussement de cils, browlift et blanchiment dentaire.
-              Une expérience douce, soignée et entièrement dédiée à vous.
+              Réhaussement de cils, browlift et blanchiment dentaire à Nantes.
+              Des soins pensés pour sublimer votre beauté naturelle.
             </motion.p>
 
             <motion.div
@@ -285,14 +285,14 @@ export default function Home() {
       <AnimatedSection id="prestations" className="relative z-10 mx-auto max-w-7xl px-6 py-24 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
-            Carte des soins
+            Nos soins
           </span>
           <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
             Prestations & tarifs
           </h2>
           <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-            Toutes les prestations durent environ 1 heure. Paiement en espèces,
-            par virement ou PayPal.
+            Chaque soin dure environ 1h. Paiement accepté en espèces,
+            virement ou PayPal.
           </p>
         </div>
 
@@ -398,13 +398,13 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
-              Elles en parlent
+              Ce qu&apos;elles en disent
             </span>
             <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
               Avis clientes
             </h2>
             <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-              La satisfaction de mes clientes est ma plus belle récompense.
+              Des clientes ravies, c&apos;est la meilleure preuve.
             </p>
           </div>
 
@@ -438,9 +438,9 @@ export default function Home() {
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-bordeaux-900/70">
               Chez Naéa Beauty, chaque rendez-vous est un moment pour soi.
-              Je travaille en petits comités, avec des soins minutieux et des
-              produits sélectionnés, pour vous offrir un résultat sublime sans
-              dénaturer vos traits.
+              Je prends le temps avec chaque cliente, avec des produits
+              professionnels sélectionnés, pour sublimer vos traits sans jamais
+              les dénaturer.
             </p>
             <ul className="mt-5 space-y-2.5">
               {[
@@ -470,14 +470,14 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 lg:px-10">
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
-              Demande de rendez-vous
+              Prendre rendez-vous
             </span>
             <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
-              Réserver votre rendez-vous
+              Offrez-vous un moment Naéa
             </h2>
             <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-              Remplissez le formulaire ci-dessous. Je vous réponds
-              personnellement dans la journée pour confirmer votre créneau.
+              Choisissez votre soin et votre créneau. Je vous confirme
+              dans la journée.
             </p>
           </div>
 
@@ -518,10 +518,10 @@ export default function Home() {
                     <div>
                       <p className="font-semibold">Email</p>
                       <a
-                        href="mailto:contact@naeabeauty.com"
+                        href="mailto:contact@naeabeauty.beauty"
                         className="text-or-100/70 hover:text-or-300"
                       >
-                        contact@naeabeauty.com
+                        contact@naeabeauty.beauty
                       </a>
                     </div>
                   </li>

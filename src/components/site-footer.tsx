@@ -27,11 +27,6 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
-              <a href="#galerie" className="hover:text-or-300">
-                Galerie
-              </a>
-            </li>
-            <li>
               <a href="#reserver" className="hover:text-or-300">
                 Réserver
               </a>
@@ -76,8 +71,8 @@ export function SiteFooter() {
             </li>
             <li className="flex items-center gap-2">
               <Mail size={16} className="text-or-400" />
-              <a href="mailto:contact@naeabeauty.com" className="hover:text-or-300">
-                contact@naeabeauty.com
+              <a href="mailto:contact@naeabeauty.beauty" className="hover:text-or-300">
+                contact@naeabeauty.beauty
               </a>
             </li>
           </ul>
