@@ -31,6 +31,15 @@ export type Disponibilite = {
   created_at: string;
 };
 
+export type DisponibiliteSpecifique = {
+  id: string;
+  date_jour: string;
+  heure_debut: string;
+  heure_fin: string;
+  actif: boolean;
+  created_at: string;
+};
+
 export type Indisponibilite = {
   id: string;
   date_debut: string;

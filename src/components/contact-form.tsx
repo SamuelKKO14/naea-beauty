@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import type { Prestation, Disponibilite, Indisponibilite } from "@/lib/types";
+import type { Prestation, DisponibiliteSpecifique, Indisponibilite } from "@/lib/types";
 
 type BookedSlot = {
   date_rdv: string;
@@ -32,11 +32,6 @@ const MOIS_LABELS = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
-
-// Convertir JS day (0=dim) en DB jour_semaine (0=lundi)
-function jsToDbDay(jsDay: number): number {
-  return (jsDay + 6) % 7;
-}
 
 function parseTime(t: string): number {
   const [h, m] = t.split(":").map(Number);
@@ -67,7 +62,7 @@ export function ReservationForm() {
 
   // Data
   const [prestations, setPrestations] = useState<Prestation[]>([]);
-  const [dispos, setDispos] = useState<Disponibilite[]>([]);
+  const [dispos, setDispos] = useState<DisponibiliteSpecifique[]>([]);
   const [indispos, setIndispos] = useState<Indisponibilite[]>([]);
   const [reservations, setReservations] = useState<BookedSlot[]>([]);
   const [battement, setBattement] = useState(30);
@@ -94,14 +89,12 @@ export function ReservationForm() {
   // --- Fetch data ---
   useEffect(() => {
     async function load() {
-      const [presRes, dispoRes, indispoRes, paramRes] = await Promise.all([
+      const [presRes, indispoRes, paramRes] = await Promise.all([
         supabase.from("prestations").select("*").eq("actif", true).order("ordre"),
-        supabase.from("disponibilites").select("*").eq("actif", true),
         supabase.from("indisponibilites").select("*"),
         supabase.from("parametres").select("valeur").eq("cle", "battement_minutes").single(),
       ]);
       setPrestations(presRes.data || []);
-      setDispos(dispoRes.data || []);
       setIndispos(indispoRes.data || []);
       if (paramRes.data) setBattement(parseInt(paramRes.data.valeur, 10) || 30);
     }
@@ -110,19 +103,28 @@ export function ReservationForm() {
 
   // Fetch reservations when date changes (month scope)
   useEffect(() => {
-    async function loadReservations() {
+    async function loadMonthData() {
       const start = dateToStr(calMonth);
       const end = dateToStr(new Date(calMonth.getFullYear(), calMonth.getMonth() + 2, 0));
-      const { data } = await supabase
-        .from("reservations")
-        .select("date_rdv, heure_rdv, prestation_id, statut, acompte_paye, prestation:prestations(duree_minutes)")
-        .gte("date_rdv", start)
-        .lte("date_rdv", end)
-        .in("statut", ["confirmee", "realisee"])
-        .eq("acompte_paye", true);
-      setReservations((data as BookedSlot[]) || []);
+      const [resRes, dispoRes] = await Promise.all([
+        supabase
+          .from("reservations")
+          .select("date_rdv, heure_rdv, prestation_id, statut, acompte_paye, prestation:prestations(duree_minutes)")
+          .gte("date_rdv", start)
+          .lte("date_rdv", end)
+          .in("statut", ["confirmee", "realisee"])
+          .eq("acompte_paye", true),
+        supabase
+          .from("disponibilites_specifiques")
+          .select("*")
+          .eq("actif", true)
+          .gte("date_jour", start)
+          .lte("date_jour", end),
+      ]);
+      setReservations((resRes.data as BookedSlot[]) || []);
+      setDispos(dispoRes.data || []);
     }
-    loadReservations();
+    loadMonthData();
   }, [calMonth]);
 
   // --- Prestation sélectionnée ---
@@ -131,10 +133,9 @@ export function ReservationForm() {
     [prestations, selectedPrestation]
   );
 
-  // --- Jours disponibles map: dbDay -> Disponibilite ---
   const dispoMap = useMemo(() => {
-    const m = new Map<number, Disponibilite>();
-    dispos.forEach((d) => m.set(d.jour_semaine, d));
+    const m = new Map<string, DisponibiliteSpecifique>();
+    dispos.forEach((d) => m.set(d.date_jour, d));
     return m;
   }, [dispos]);
 
@@ -155,8 +156,7 @@ export function ReservationForm() {
       if (date < today) return false;
       if (isSameDay(date, today)) return false;
       if (isIndispo(date)) return false;
-      const dbDay = jsToDbDay(date.getDay());
-      return dispoMap.has(dbDay);
+      return dispoMap.has(dateToStr(date));
     },
     [dispoMap, isIndispo]
   );
@@ -164,8 +164,7 @@ export function ReservationForm() {
   // --- Générer les créneaux pour la date sélectionnée ---
   const slots = useMemo(() => {
     if (!selectedDate || !prestation) return [];
-    const dbDay = jsToDbDay(selectedDate.getDay());
-    const dispo = dispoMap.get(dbDay);
+    const dispo = dispoMap.get(dateToStr(selectedDate));
     if (!dispo) return [];
 
     const debut = parseTime(dispo.heure_debut);
@@ -232,8 +231,7 @@ export function ReservationForm() {
     for (const day of calDays) {
       if (!day) continue;
       if (!isDateBaseAvailable(day)) continue;
-      const dbDay = jsToDbDay(day.getDay());
-      const dispo = dispoMap.get(dbDay);
+      const dispo = dispoMap.get(dateToStr(day));
       if (!dispo) continue;
 
       const debut = parseTime(dispo.heure_debut);
