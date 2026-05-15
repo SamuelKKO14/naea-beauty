@@ -62,6 +62,41 @@ const TESTIMONIALS = [
     stars: 5,
     text: "Je suis venue pour la retouche après ma première séance et l'éclat est revenu direct. L'ambiance est hyper cosy, on se sent bien. Je recommande Amina les yeux fermés.",
   },
+  {
+    id: 9,
+    name: "Nour H., 19 ans",
+    service: "Réhaussement de cils",
+    stars: 5,
+    text: "C'était mon premier réhaussement et franchement j'aurais dû le faire avant. Mes cils sont naturellement sublimes maintenant, toutes mes copines me demandent où j'ai fait. Merci Amina !",
+  },
+  {
+    id: 10,
+    name: "Maëva P., 18 ans",
+    service: "Réhaussement de cils + teinture",
+    stars: 5,
+    text: "J'hésitais entre extensions et réhaussement, Amina m'a conseillé le réhaussement + teinture et c'est exactement ce qu'il me fallait. Résultat hyper naturel et zéro entretien.",
+  },
+  {
+    id: 11,
+    name: "Jade S., 20 ans",
+    service: "Browlift",
+    stars: 5,
+    text: "Mes sourcils étaient ma plus grosse insécurité et maintenant c'est ce que je préfère sur mon visage. L'effet laminé est parfait, ça change tout.",
+  },
+  {
+    id: 12,
+    name: "Lina A., 19 ans",
+    service: "Blanchiment dentaire Ultra White",
+    stars: 5,
+    text: "Je souriais jamais sur les photos avant. Depuis le blanchiment chez Naéa je souris tout le temps, le résultat est fou pour une seule séance.",
+  },
+  {
+    id: 13,
+    name: "Ambre C., 20 ans",
+    service: "Réhaussement de cils + teinture",
+    stars: 5,
+    text: "Troisième rendez-vous et toujours aussi satisfaite. L'ambiance est douce, Amina prend son temps et le résultat est toujours au top. Mon rdv beauté préféré.",
+  },
 ];
 
 /* ── Composant principal ──────────────────────────────── */
