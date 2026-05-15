@@ -173,9 +173,9 @@ function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative isolate min-h-[100svh] overflow-hidden bg-black"
+      className="relative min-h-[100svh] overflow-hidden bg-bordeaux-950"
     >
-      {/* Slideshow — toutes les images empilées, fade */}
+      {/* Slideshow — plein écran, object-cover */}
       {HERO_IMAGES.map((src, i) => (
         <Image
           key={src}
@@ -183,7 +183,7 @@ function HeroSection() {
           alt={`Naéa Beauty — prestation cils #${i + 1}`}
           fill
           priority={i === 0}
-          className={`object-contain transition-opacity duration-1000 ${
+          className={`object-cover object-center transition-opacity duration-1000 ${
             i === active ? "opacity-100" : "opacity-0"
           }`}
           sizes="100vw"
@@ -206,9 +206,7 @@ function HeroSection() {
               transition={{ delay: 0.5, duration: 0.7 }}
               className="mt-8 font-display text-3xl leading-tight text-white md:text-4xl lg:text-5xl"
             >
-              Sublimez
-              <br />
-              votre regard,
+              Sublimez votre regard,
               <br />
               <span className="italic text-or-300">révélez votre beauté.</span>
             </motion.h1>
