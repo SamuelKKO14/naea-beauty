@@ -204,7 +204,7 @@ function HeroSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.7 }}
-              className="mt-8 font-display text-5xl leading-[1.05] text-white md:text-6xl lg:text-7xl xl:text-8xl"
+              className="mt-8 font-display text-3xl leading-tight text-white md:text-4xl lg:text-5xl"
             >
               Sublimez
               <br />
@@ -217,7 +217,7 @@ function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.6 }}
-              className="mt-6 max-w-md text-lg leading-relaxed text-white/80"
+              className="mt-4 max-w-md text-lg leading-relaxed text-white/80"
             >
               Réhaussement de cils, browlift et blanchiment dentaire à Nantes.
               Des soins pensés pour sublimer votre beauté naturelle.
@@ -227,7 +227,7 @@ function HeroSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.0, duration: 0.6 }}
-              className="mt-10 flex flex-col gap-3 sm:flex-row"
+              className="mt-6 flex flex-col gap-3 sm:flex-row"
             >
               <ShimmerButton href="#reserver">
                 <Calendar
@@ -249,7 +249,7 @@ function HeroSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.3, duration: 0.6 }}
-              className="mt-14 flex flex-wrap items-center gap-5 text-sm text-white/60"
+              className="mt-8 flex flex-wrap items-center gap-5 text-sm text-white/60"
             >
               <span className="flex items-center gap-2">
                 <MapPin size={15} className="text-or-400" /> Sur Nantes
@@ -287,7 +287,7 @@ export default function Home() {
           <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
             Nos soins
           </span>
-          <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
+          <h2 className="mt-3 font-display text-2xl text-bordeaux-900 md:text-3xl">
             Prestations & tarifs
           </h2>
           <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
@@ -341,7 +341,7 @@ export default function Home() {
 
               {/* Price + CTA */}
               <div className="mt-6 border-t border-or-200/40 pt-5">
-                <p className="text-center font-display text-2xl text-bordeaux-900">
+                <p className="text-center font-display text-xl text-bordeaux-900">
                   {s.price}{" "}
                   <span className="text-sm text-bordeaux-600">€</span>
                 </p>
@@ -368,7 +368,7 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               Résultats
             </span>
-            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
+            <h2 className="mt-3 font-display text-2xl text-bordeaux-900 md:text-3xl">
               Avant / Après
             </h2>
           </div>
@@ -400,7 +400,7 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               Ce qu&apos;elles en disent
             </span>
-            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
+            <h2 className="mt-3 font-display text-2xl text-bordeaux-900 md:text-3xl">
               Avis clientes
             </h2>
             <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
@@ -432,7 +432,7 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               L&apos;univers Naéa
             </span>
-            <h2 className="mt-2 font-display text-3xl text-bordeaux-900 md:text-4xl">
+            <h2 className="mt-2 font-display text-2xl text-bordeaux-900 md:text-3xl">
               Une beauté <em className="text-or-700">douce</em>, naturelle et
               durable
             </h2>
@@ -472,7 +472,7 @@ export default function Home() {
             <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
               Prendre rendez-vous
             </span>
-            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
+            <h2 className="mt-3 font-display text-2xl text-bordeaux-900 md:text-3xl">
               Offrez-vous un moment Naéa
             </h2>
             <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
