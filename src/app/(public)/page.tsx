@@ -25,14 +25,7 @@ import { Mail } from "lucide-react";
 import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 import { ShimmerButton, BorderAnimateButton } from "@/components/shimmer-button";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
-import { GalleryCarousel } from "@/components/gallery-carousel";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
-
-/* ─── PHOTOS GALERIE (cils-01 → cils-28) ──────────── */
-const PHOTOS = Array.from({ length: 28 }, (_, i) => ({
-  src: `/gallery/cils-${String(i + 1).padStart(2, "0")}.png`,
-  alt: `Naéa Beauty — prestation cils #${i + 1}`,
-}));
 
 /* ─── SECTION ANIMÉE WRAPPER ───────────────────────── */
 function AnimatedSection({
@@ -110,7 +103,6 @@ const SECTIONS = [
   { id: "hero", label: "Accueil" },
   { id: "prestations", label: "Prestations" },
   { id: "avant-apres", label: "Avant / Après" },
-  { id: "galerie", label: "Galerie" },
   { id: "temoignages", label: "Avis" },
   { id: "apropos", label: "À propos" },
   { id: "reserver", label: "Réserver" },
@@ -450,31 +442,6 @@ export default function Home() {
                 </span>
               </div>
             ))}
-          </div>
-        </div>
-      </AnimatedSection>
-
-      {/* ── GALERIE ── */}
-      <AnimatedSection
-        id="galerie"
-        className="relative z-10 border-y border-bordeaux-100/60 bg-bordeaux-50/30 py-24"
-      >
-        <div className="mx-auto max-w-7xl px-6 lg:px-10">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
-              Réalisations
-            </span>
-            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
-              Galerie
-            </h2>
-            <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-              Quelques résultats de mes prestations. Chaque cliente est
-              unique — l'adaptation est totale.
-            </p>
-          </div>
-
-          <div className="mt-16">
-            <GalleryCarousel photos={PHOTOS} />
           </div>
         </div>
       </AnimatedSection>
