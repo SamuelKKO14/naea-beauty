@@ -26,6 +26,7 @@ import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 import { ShimmerButton, BorderAnimateButton } from "@/components/shimmer-button";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 import { GalleryCarousel } from "@/components/gallery-carousel";
+import { BeforeAfterSlider } from "@/components/before-after-slider";
 
 /* ─── PHOTOS GALERIE (cils-01 → cils-28) ──────────── */
 const PHOTOS = Array.from({ length: 28 }, (_, i) => ({
@@ -108,6 +109,7 @@ function GoldLine() {
 const SECTIONS = [
   { id: "hero", label: "Accueil" },
   { id: "prestations", label: "Prestations" },
+  { id: "avant-apres", label: "Avant / Après" },
   { id: "galerie", label: "Galerie" },
   { id: "temoignages", label: "Avis" },
   { id: "apropos", label: "À propos" },
@@ -417,6 +419,38 @@ export default function Home() {
               </div>
             </motion.article>
           ))}
+        </div>
+      </AnimatedSection>
+
+      {/* ── AVANT / APRÈS ── */}
+      <AnimatedSection
+        id="avant-apres"
+        className="relative z-10 py-24"
+      >
+        <div className="mx-auto max-w-7xl px-6 lg:px-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs uppercase tracking-[0.22em] text-bordeaux-600">
+              Résultats
+            </span>
+            <h2 className="mt-3 font-display text-3xl text-bordeaux-900 md:text-4xl">
+              Avant / Après
+            </h2>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="flex flex-col items-center gap-3">
+                <BeforeAfterSlider
+                  before={`/before-after/avant-${n}.jpg`}
+                  after={`/before-after/apres-${n}.jpg`}
+                  alt={`Résultat ${n}`}
+                />
+                <span className="text-sm text-bordeaux-900/70">
+                  Réhaussement de cils
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </AnimatedSection>
 
