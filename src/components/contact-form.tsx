@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard } from "lucide-react";
+import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Prestation, Disponibilite, Indisponibilite } from "@/lib/types";
 
@@ -82,6 +82,8 @@ export function ReservationForm() {
   const [telephone, setTelephone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [cgvAccepted, setCgvAccepted] = useState(false);
+  const [showCgv, setShowCgv] = useState(false);
 
   // Calendar
   const [calMonth, setCalMonth] = useState(() => {
@@ -273,7 +275,7 @@ export function ReservationForm() {
 
   async function handleSubmit() {
     if (submittingRef.current) return;
-    if (!selectedPrestation || !selectedDate || !selectedSlot || !prenom || !nom || !email || !telephone) return;
+    if (!selectedPrestation || !selectedDate || !selectedSlot || !prenom || !nom || !email || !telephone || !cgvAccepted) return;
 
     submittingRef.current = true;
     setIsSubmitting(true);
@@ -689,11 +691,72 @@ export function ReservationForm() {
         </div>
       )}
 
+      {/* CGV checkbox */}
+      <label className="flex cursor-pointer items-start gap-2.5">
+        <input
+          type="checkbox"
+          checked={cgvAccepted}
+          onChange={(e) => setCgvAccepted(e.target.checked)}
+          className="mt-0.5 shrink-0 accent-or-500"
+        />
+        <span className="text-xs leading-relaxed text-bordeaux-900/70">
+          J&apos;accepte les{" "}
+          <button
+            type="button"
+            onClick={() => setShowCgv(true)}
+            className="font-medium text-or-700 underline underline-offset-2 hover:text-or-900"
+          >
+            conditions de réservation
+          </button>{" "}
+          et la politique d&apos;acompte non-remboursable (50% du montant, non restituable en cas d&apos;annulation).
+        </span>
+      </label>
+
+      {/* Modale CGV */}
+      {showCgv && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowCgv(false)}
+        >
+          <div
+            className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowCgv(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-bordeaux-600 hover:bg-bordeaux-50"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="font-display text-xl text-bordeaux-900">
+              Conditions de réservation — Naéa Beauty
+            </h3>
+            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-bordeaux-900/80">
+              <li>• Un acompte de 50% du montant de la prestation est demandé pour confirmer votre rendez-vous.</li>
+              <li>• L&apos;acompte est non-remboursable en cas d&apos;annulation.</li>
+              <li>• Toute annulation doit être signalée au moins 24 heures à l&apos;avance.</li>
+              <li>• En cas de retard de plus de 15 minutes sans prévenir, le rendez-vous pourra être annulé et l&apos;acompte conservé.</li>
+              <li>• Les prestations sont réalisées à Nantes, à domicile ou chez Naéa Beauty.</li>
+              <li>• Les résultats peuvent varier selon la nature des cils, sourcils ou dents de chaque cliente.</li>
+              <li>• En réservant, vous confirmez ne pas avoir de contre-indications connues aux soins choisis.</li>
+            </ul>
+            <button
+              type="button"
+              onClick={() => setShowCgv(false)}
+              className="mt-6 w-full rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 transition-all hover:bg-or-400"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Submit — type="button" pour éviter double submit via form */}
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={isSubmitting || status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot}
+        disabled={isSubmitting || status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot || !cgvAccepted}
         className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
