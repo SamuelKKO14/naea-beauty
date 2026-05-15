@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import {
   ArrowRight,
   Calendar,
@@ -14,8 +13,6 @@ import {
 } from "lucide-react";
 import {
   motion,
-  useScroll,
-  useTransform,
   useInView,
 } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
@@ -154,110 +151,60 @@ function ScrollIndicator() {
   );
 }
 
-/* ─── HERO ─────────────────────────────────────────── */
+/* ─── HERO SLIDESHOW ──────────────────────────────── */
+const HERO_IMAGES = [
+  "/hero/hero-1.png",
+  "/hero/hero-2.png",
+  "/hero/hero-3.png",
+  "/hero/hero-4.png",
+  "/hero/hero-5.png",
+];
+
 function HeroSection() {
-  const heroRef = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
+  const [active, setActive] = useState(0);
 
-  // Parallax image (slow vertical movement)
-  const imageY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-  // Zoom-out + fade on scroll
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.92]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  // Custom cursor on image hover
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
-  const [cursorVisible, setCursorVisible] = useState(false);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-
-  function handleMouseMove(e: React.MouseEvent) {
-    if (imageContainerRef.current) {
-      const rect = imageContainerRef.current.getBoundingClientRect();
-      setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    }
-  }
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 4000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
-    <motion.section
+    <section
       id="hero"
-      ref={heroRef}
-      style={{ scale: heroScale, opacity: heroOpacity }}
-      className="relative isolate min-h-[100svh] overflow-hidden bg-bordeaux-950"
+      className="relative isolate min-h-[100svh] overflow-hidden bg-black"
     >
-      {/* Image — 60% à droite avec parallax */}
-      <div className="absolute inset-0 grid grid-cols-1 lg:grid-cols-[1fr_1.5fr]">
-        {/* Espace gauche = vide (le texte est positionné par-dessus) */}
-        <div className="hidden lg:block" />
+      {/* Slideshow — toutes les images empilées, fade */}
+      {HERO_IMAGES.map((src, i) => (
+        <Image
+          key={src}
+          src={src}
+          alt={`Naéa Beauty — prestation cils #${i + 1}`}
+          fill
+          priority={i === 0}
+          className={`object-cover transition-opacity duration-1000 ${
+            i === active ? "opacity-100" : "opacity-0"
+          }`}
+          sizes="100vw"
+        />
+      ))}
 
-        {/* Image droite bord à bord */}
-        <div
-          ref={imageContainerRef}
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => setCursorVisible(true)}
-          onMouseLeave={() => setCursorVisible(false)}
-          className="relative overflow-hidden lg:cursor-none"
-        >
-          <motion.div style={{ y: imageY }} className="absolute inset-0 -top-[10%] -bottom-[10%]">
-            <Image
-              src="/hero.png"
-              alt="Naéa Beauty — prestations beauté à Nantes"
-              fill
-              priority
-              className="object-cover object-center"
-              sizes="(max-width: 1024px) 100vw, 60vw"
-            />
-          </motion.div>
+      {/* Overlay sombre */}
+      <div aria-hidden className="absolute inset-0 bg-black/40" />
 
-          {/* Overlay gradient sur l'image */}
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-r from-bordeaux-950 via-bordeaux-950/60 to-transparent lg:via-bordeaux-950/40"
-          />
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-to-t from-bordeaux-950/60 to-transparent lg:hidden"
-          />
-
-          {/* Custom cursor doré */}
-          {cursorVisible && (
-            <motion.div
-              className="pointer-events-none absolute z-30 hidden h-5 w-5 rounded-full bg-or-400/80 shadow-lg shadow-or-500/40 mix-blend-screen lg:block"
-              animate={{ x: cursorPos.x - 10, y: cursorPos.y - 10 }}
-              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Reflet doré */}
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage:
-            "radial-gradient(ellipse at 30% 70%, rgba(201,169,97,0.35), transparent 55%)",
-        }}
-      />
-
-      {/* Contenu texte à gauche */}
+      {/* Contenu texte */}
       <div className="relative z-10 flex min-h-[100svh] items-center">
         <div className="mx-auto w-full max-w-7xl px-6 py-24 lg:px-10">
           <div className="max-w-xl lg:max-w-lg">
-            {/* Badge shimmer */}
             <ShimmerBadge />
-
-            {/* Ligne dorée SVG */}
             <GoldLine />
 
-            {/* Titre */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.7 }}
-              className="mt-8 font-display text-5xl leading-[1.05] text-or-100 md:text-6xl lg:text-7xl xl:text-8xl"
+              className="mt-8 font-display text-5xl leading-[1.05] text-white md:text-6xl lg:text-7xl xl:text-8xl"
             >
               Sublimez
               <br />
@@ -266,18 +213,16 @@ function HeroSection() {
               <span className="italic text-or-300">éveillez votre éclat.</span>
             </motion.h1>
 
-            {/* Sous-titre */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.6 }}
-              className="mt-6 max-w-md text-lg leading-relaxed text-or-100/80"
+              className="mt-6 max-w-md text-lg leading-relaxed text-white/80"
             >
               Réhaussement de cils, browlift et blanchiment dentaire.
               Une expérience douce, soignée et entièrement dédiée à vous.
             </motion.p>
 
-            {/* CTA empilés */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -300,21 +245,20 @@ function HeroSection() {
               </BorderAnimateButton>
             </motion.div>
 
-            {/* Tagline basse */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.3, duration: 0.6 }}
-              className="mt-14 flex flex-wrap items-center gap-5 text-sm text-or-100/60"
+              className="mt-14 flex flex-wrap items-center gap-5 text-sm text-white/60"
             >
               <span className="flex items-center gap-2">
                 <MapPin size={15} className="text-or-400" /> Sur Nantes
               </span>
-              <span className="hidden h-3 w-px bg-or-100/20 sm:block" />
+              <span className="hidden h-3 w-px bg-white/20 sm:block" />
               <span className="flex items-center gap-2">
                 <Heart size={15} className="text-or-400" /> A domicile ou chez moi
               </span>
-              <span className="hidden h-3 w-px bg-or-100/20 sm:block" />
+              <span className="hidden h-3 w-px bg-white/20 sm:block" />
               <span className="flex items-center gap-2">
                 <Sparkles size={15} className="text-or-400" /> 1h de prestation
               </span>
@@ -322,7 +266,7 @@ function HeroSection() {
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 }
 
