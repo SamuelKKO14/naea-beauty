@@ -4,42 +4,63 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star } from "lucide-react";
 
-/* ── Données fictives crédibles ────────────────────────── */
+/* ── Témoignages ─────────────────────────────────────── */
 const TESTIMONIALS = [
   {
     id: 1,
-    name: "Camille D.",
+    name: "Inès L.",
     service: "Réhaussement de cils",
     stars: 5,
-    text: "Un regard complètement transformé ! Je n'ai plus besoin de mascara, mes cils sont sublimes au naturel. L'application est douce et le résultat dure vraiment longtemps. Je recommande les yeux fermés.",
+    text: "Mes cils ont une courbure incroyable, on dirait que je porte du mascara alors que non. Le résultat est hyper naturel, exactement ce que je voulais. Je reviens dans 6 semaines c'est sûr.",
   },
   {
     id: 2,
-    name: "Inès M.",
-    service: "Browlift + restructuration",
+    name: "Sofia M., 24 ans",
+    service: "Réhaussement de cils + teinture",
     stars: 5,
-    text: "Mes sourcils n'ont jamais été aussi bien dessinés. Le browlift donne un effet laminé magnifique et la restructuration est impeccable. Naéa est très minutieuse et à l'écoute.",
+    text: "J'avais un peu peur parce que c'était ma première fois mais Amina m'a mise à l'aise direct. Le rendu est magnifique, mes cils sont tellement beaux que j'ai rangé mon mascara.",
   },
   {
     id: 3,
     name: "Léa R.",
-    service: "Blanchiment dentaire",
+    service: "Browlift",
     stars: 5,
-    text: "Résultat bluffant dès la première séance ! Mon sourire est beaucoup plus lumineux et le soin est totalement indolore. L'ambiance est cosy, on se sent vraiment chouchoutée.",
+    text: "Mes sourcils n'ont jamais été aussi bien dessinés. L'effet laminé est top, ça structure tout le visage. Et en plus c'est super rapide.",
   },
   {
     id: 4,
-    name: "Manon B.",
-    service: "Réhaussement de cils + teinture",
+    name: "Mariam K., 28 ans",
+    service: "Réhaussement de cils",
     stars: 5,
-    text: "La combinaison réhaussement + teinture est parfaite. Mes cils ont l'air deux fois plus longs et la teinture apporte une intensité incroyable. Je ne peux plus m'en passer !",
+    text: "Troisième fois que je viens et c'est toujours aussi parfait. Un vrai moment de détente à chaque fois, et le résultat tient vraiment les 8 semaines.",
   },
   {
     id: 5,
-    name: "Sarah K.",
-    service: "Browlift",
+    name: "Chloé B.",
+    service: "Blanchiment dentaire Ultra White",
     stars: 5,
-    text: "Je suis venue pour un browlift avant mon mariage et le résultat était exactement ce que je voulais. Des sourcils structurés et naturels à la fois. Merci Naéa pour ta douceur !",
+    text: "Je n'y croyais pas trop mais le résultat est bluffant. Mes dents sont visiblement plus blanches dès la première séance. Amina est vraiment pro et rassurante.",
+  },
+  {
+    id: 6,
+    name: "Yasmine D., 22 ans",
+    service: "Browlift + restructuration",
+    stars: 5,
+    text: "J'avais des sourcils un peu dans tous les sens et maintenant ils sont parfaitement dessinés. L'effet est canon et ça dure longtemps.",
+  },
+  {
+    id: 7,
+    name: "Emma T.",
+    service: "Réhaussement de cils + teinture",
+    stars: 5,
+    text: "Le combo réhaussement + teinture c'est vraiment le game changer. On se réveille le matin avec un regard de ouf. Merci pour ce moment de douceur.",
+  },
+  {
+    id: 8,
+    name: "Aïcha N., 26 ans",
+    service: "Retouche blanchiment",
+    stars: 5,
+    text: "Je suis venue pour la retouche après ma première séance et l'éclat est revenu direct. L'ambiance est hyper cosy, on se sent bien. Je recommande Amina les yeux fermés.",
   },
 ];
 
