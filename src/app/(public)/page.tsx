@@ -183,7 +183,7 @@ function HeroSection() {
           alt={`Naéa Beauty — prestation cils #${i + 1}`}
           fill
           priority={i === 0}
-          className={`object-cover transition-opacity duration-1000 ${
+          className={`object-contain transition-opacity duration-1000 ${
             i === active ? "opacity-100" : "opacity-0"
           }`}
           sizes="100vw"
