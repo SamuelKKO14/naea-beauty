@@ -371,8 +371,8 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
-            {[1, 2, 3, 4].map((n) => (
+          <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-3">
+            {[1, 2, 4].map((n) => (
               <div key={n} className="flex flex-col items-center gap-3">
                 <BeforeAfterSlider
                   before={`/before-after/avant-${n}.jpg`}
