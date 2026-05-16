@@ -194,7 +194,7 @@ export async function POST(request: Request) {
       clientEmailResult = await getResend().emails.send({
         from: "Naéa Beauty <contact@naeabeauty.beauty>",
         to: emailNorm,
-        replyTo: "samuelempire002@gmail.com",
+        replyTo: "u8168691726@id.gle",
         subject: "Votre demande de rendez-vous Naéa Beauty",
         html: demandeReservationClienteHTML({
           prenom: prenomTrimmed,
@@ -223,7 +223,7 @@ export async function POST(request: Request) {
         adminEmailResult = await getResend().emails.send({
           from: "Naéa Beauty <contact@naeabeauty.beauty>",
           to: params.email_notification,
-          replyTo: "samuelempire002@gmail.com",
+          replyTo: "u8168691726@id.gle",
           subject: `🔔 Nouvelle réservation — ${prenomTrimmed} ${nomTrimmed} — ${prestation.nom}`,
           html: nouvelleReservationAdminHTML({
             prenom: prenomTrimmed,
