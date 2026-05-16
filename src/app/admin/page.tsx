@@ -104,11 +104,12 @@ export default function AdminDashboard() {
       .order("created_at", { ascending: false })
       .limit(5);
 
-    const recentReservations = (recentData || []).map((r: any) => ({
+    const recentRows = (recentData || []).map((r: any) => ({
       ...r,
       client_name: `${r.client?.prenom || ""} ${r.client?.nom || ""}`.trim(),
       prestation_name: r.prestation?.nom || "",
     }));
+    const recentReservations = [...new Map(recentRows.map((r: any) => [r.id, r])).values()];
 
     setStats({
       todayCount: todayCount || 0,

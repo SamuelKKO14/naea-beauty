@@ -65,15 +65,15 @@ export default function ReservationsPage() {
 
     const { data } = await query;
 
-    setReservations(
-      (data || []).map((r: any) => ({
-        ...r,
-        client_name: `${r.client?.prenom || ""} ${r.client?.nom || ""}`.trim(),
-        client_email: r.client?.email || "",
-        client_phone: r.client?.telephone || "",
-        prestation_name: r.prestation?.nom || "",
-      }))
-    );
+    const rows = (data || []).map((r: any) => ({
+      ...r,
+      client_name: `${r.client?.prenom || ""} ${r.client?.nom || ""}`.trim(),
+      client_email: r.client?.email || "",
+      client_phone: r.client?.telephone || "",
+      prestation_name: r.prestation?.nom || "",
+    }));
+    const unique = [...new Map(rows.map((r: any) => [r.id, r])).values()] as ReservationRow[];
+    setReservations(unique);
     setLoading(false);
   }, [filterStatut, filterDate]);
 
