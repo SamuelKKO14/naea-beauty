@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     const result = await getResend().emails.send({
       from: "Naéa Beauty <contact@naeabeauty.beauty>",
       to: clientEmail,
-      replyTo: "u8168691726@id.gle",
+      replyTo: "naeabeauty44@gmail.com",
       subject: "Votre rendez-vous Naéa Beauty est confirmé ✨",
       html,
     });

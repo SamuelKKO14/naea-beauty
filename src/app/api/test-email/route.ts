@@ -5,7 +5,7 @@ export async function GET() {
     const { data, error } = await getResend().emails.send({
       from: "Naéa Beauty <contact@naeabeauty.beauty>",
       to: "samuelempire002@gmail.com",
-      replyTo: "u8168691726@id.gle",
+      replyTo: "naeabeauty44@gmail.com",
       subject: "Test Resend Naéa Beauty",
       html: "<h1>Resend fonctionne !</h1><p>Les emails Naéa Beauty sont opérationnels.</p>",
     });
