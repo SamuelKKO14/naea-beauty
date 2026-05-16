@@ -5,7 +5,7 @@ const OR = "#C9A84C";
 const OR_CLAIR = "#E8D5B5";
 const CREAM = "#FFF8F0";
 const BLANC = "#FFFFFF";
-const GRIS_SEC = "#888888";
+const GRIS_SEC = "#999999";
 
 const FONT_TITRE = "Georgia, 'Times New Roman', serif";
 const FONT_CORPS = "Arial, Helvetica, sans-serif";
@@ -23,8 +23,9 @@ function layout(content: string) {
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${BLANC};border-radius:12px;overflow:hidden;border:1px solid ${OR_CLAIR};">
   <!-- Header -->
   <tr>
-    <td style="background-color:#6e1f3c;padding:0;text-align:center;height:120px;line-height:120px;">
-      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;color:#fbf6ef;font-weight:700;letter-spacing:1px;vertical-align:middle;">Na\u00E9a Beauty</span>
+    <td style="background-color:#1A0A10;padding:28px 0;text-align:center;">
+      <img src="https://naeabeauty.beauty/logo.png" height="50" style="display:block;margin:0 auto 12px auto;" alt="Na\u00E9a Beauty" />
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:22px;color:#F5E6D0;font-weight:700;letter-spacing:1px;">Na\u00E9a Beauty</span>
     </td>
   </tr>
   <!-- Espace -->
