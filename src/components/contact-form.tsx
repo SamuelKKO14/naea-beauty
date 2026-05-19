@@ -1,7 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard, X } from "lucide-react";
+import {
+  AnimatePresence,
+  motion,
+  type MotionProps,
+} from "framer-motion";
+import {
+  ArrowLeft,
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Copy,
+  CreditCard,
+  Sparkles,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Prestation, DisponibiliteSpecifique, Indisponibilite } from "@/lib/types";
 import {
@@ -49,6 +64,67 @@ function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+const STEPS = [
+  "Soin",
+  "Date",
+  "Vos infos",
+  "Paiement",
+] as const;
+
+type StepIdx = 0 | 1 | 2 | 3;
+
+/* ─── Slide motion preset ─────────────────────────────── */
+const slideVariants: MotionProps["variants"] = {
+  enter: (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
+};
+
+/* ─── Stepper header ──────────────────────────────────── */
+function Stepper({ step }: { step: StepIdx }) {
+  return (
+    <ol className="mb-8 flex items-center justify-between gap-1 sm:gap-2">
+      {STEPS.map((label, i) => {
+        const status: "done" | "current" | "todo" =
+          i < step ? "done" : i === step ? "current" : "todo";
+        return (
+          <li key={label} className="flex flex-1 items-center">
+            <div className="flex flex-col items-center">
+              <span
+                className={`grid h-8 w-8 place-items-center rounded-full text-xs font-semibold transition-all ${
+                  status === "done"
+                    ? "bg-green-600 text-white"
+                    : status === "current"
+                      ? "bg-or-500 text-bordeaux-950 ring-4 ring-or-500/20"
+                      : "border border-bordeaux-200 bg-white text-bordeaux-400"
+                }`}
+              >
+                {status === "done" ? <Check size={14} /> : i + 1}
+              </span>
+              <span
+                className={`mt-1.5 hidden text-[10px] uppercase tracking-wide sm:block ${
+                  status === "todo" ? "text-bordeaux-400" : "text-bordeaux-700"
+                }`}
+              >
+                {label}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <span
+                aria-hidden
+                className={`mx-1 h-px flex-1 transition-colors sm:mx-2 ${
+                  i < step ? "bg-green-600" : "bg-bordeaux-200"
+                }`}
+              />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/* ─── ReservationForm ─────────────────────────────────── */
 export function ReservationForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -75,7 +151,19 @@ export function ReservationForm() {
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [cgvAccepted, setCgvAccepted] = useState(false);
-  const [showCgv, setShowCgv] = useState(false);
+
+  // Stepper
+  const [step, setStep] = useState<StepIdx>(0);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const formTopRef = useRef<HTMLDivElement>(null);
+
+  function goTo(next: StepIdx) {
+    setDirection(next > step ? 1 : -1);
+    setStep(next);
+    requestAnimationFrame(() => {
+      formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   // Calendar
   const [calMonth, setCalMonth] = useState(() => {
@@ -98,7 +186,7 @@ export function ReservationForm() {
     load();
   }, []);
 
-  // Fetch reservations when date changes (month scope)
+  // Fetch reservations + dispos when month changes
   useEffect(() => {
     async function loadMonthData() {
       const start = dateToStr(calMonth);
@@ -136,7 +224,6 @@ export function ReservationForm() {
     return m;
   }, [dispos]);
 
-  // --- Is date available (base check, without fully-booked) ---
   const isDateBaseAvailable = useCallback(
     (date: Date) => {
       const today = new Date();
@@ -151,13 +238,12 @@ export function ReservationForm() {
     [dispoMap, indispos]
   );
 
-  // --- Générer les créneaux pour la date sélectionnée ---
   const slots = useMemo(() => {
     if (!selectedDate || !prestation) return [];
-    const dateStr = dateToStr(selectedDate);
+    const ds = dateToStr(selectedDate);
     return generateSlots({
-      dateStr,
-      dispo: dispoMap.get(dateStr),
+      dateStr: ds,
+      dispo: dispoMap.get(ds),
       dureeMinutes: prestation.duree_minutes,
       battementMinutes: battement,
       indispos,
@@ -175,25 +261,19 @@ export function ReservationForm() {
     setSelectedDate(null);
   }, [selectedPrestation]);
 
-  // --- Calendar rendering ---
+  // Calendar grid
   const calDays = useMemo(() => {
     const year = calMonth.getFullYear();
     const month = calMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-
-    // Jour de la semaine du 1er (lundi = 0)
-    let startOffset = (firstDay.getDay() + 6) % 7;
+    const startOffset = (firstDay.getDay() + 6) % 7;
     const days: (Date | null)[] = [];
-
     for (let i = 0; i < startOffset; i++) days.push(null);
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-      days.push(new Date(year, month, d));
-    }
+    for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
     return days;
   }, [calMonth]);
 
-  // --- Dates entièrement réservées (zéro slot libre) ---
   const fullyBookedDates = useMemo(() => {
     if (!prestation) return new Set<string>();
     const booked = new Set<string>();
@@ -214,7 +294,6 @@ export function ReservationForm() {
     return booked;
   }, [prestation, calDays, isDateBaseAvailable, dispoMap, reservations, battement, indispos]);
 
-  // --- Is date available (final, includes fully-booked check) ---
   const isDateAvailable = useCallback(
     (date: Date) => {
       if (!isDateBaseAvailable(date)) return false;
@@ -224,7 +303,7 @@ export function ReservationForm() {
     [isDateBaseAvailable, fullyBookedDates]
   );
 
-  // --- Submit --- Anti double-submit : useRef + useState
+  // --- Submit ---
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
@@ -255,9 +334,7 @@ export function ReservationForm() {
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Erreur");
-      }
+      if (!res.ok) throw new Error(data.error || "Erreur");
 
       setBookingResult({
         reservation_id: data.reservation_id,
@@ -265,6 +342,8 @@ export function ReservationForm() {
         montant_acompte: data.montant_acompte,
       });
       setStatus("success");
+      setDirection(1);
+      setStep(3);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Une erreur est survenue.");
       setStatus("error");
@@ -281,456 +360,447 @@ export function ReservationForm() {
   }
 
   const shortId = bookingResult?.reservation_id?.slice(0, 8).toUpperCase() || "";
-
-  // --- Success ---
-  if (status === "success" && bookingResult && prestation && selectedDate) {
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-or-100">
-            <Check className="text-or-700" size={32} />
-          </div>
-          <h3 className="mt-5 font-display text-2xl text-bordeaux-900">
-            Réservation enregistrée !
-          </h3>
-          <p className="mt-2 text-sm text-bordeaux-900/70">
-            Pour confirmer votre rendez-vous, versez l&apos;acompte de{" "}
-            <strong>{bookingResult.montant_acompte} €</strong>
-          </p>
-        </div>
-
-        {/* Récapitulatif */}
-        <div className="rounded-lg border border-or-200 bg-or-50/50 px-5 py-4">
-          <p className="text-sm font-semibold text-bordeaux-900">Récapitulatif</p>
-          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-            <dt className="text-bordeaux-900/60">Prestation</dt>
-            <dd className="text-bordeaux-900">{prestation.nom}</dd>
-            <dt className="text-bordeaux-900/60">Date</dt>
-            <dd className="text-bordeaux-900">
-              {selectedDate.toLocaleDateString("fr-FR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}{" "}
-              à {formatTime(parseTimeStart(selectedSlot))}
-            </dd>
-            <dt className="text-bordeaux-900/60">Lieu</dt>
-            <dd className="text-bordeaux-900">
-              {lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}
-            </dd>
-            <dt className="text-bordeaux-900/60">Montant total</dt>
-            <dd className="text-bordeaux-900">{bookingResult.montant_total} €</dd>
-            <dt className="text-bordeaux-900/60">Acompte à verser</dt>
-            <dd className="font-semibold text-bordeaux-900">{bookingResult.montant_acompte} € (50%)</dd>
-          </dl>
-        </div>
-
-        {/* Options de paiement */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* PayPal */}
-          <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
-            <h4 className="text-sm font-semibold text-bordeaux-900">PayPal</h4>
-            <a
-              href={`https://paypal.me/NAEABEAUTY/${bookingResult.montant_acompte}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:shadow-lg hover:shadow-or-500/30"
-            >
-              <CreditCard size={16} />
-              Payer par PayPal
-            </a>
-            <p className="mt-3 text-xs text-bordeaux-900/60">
-              Envoyez {bookingResult.montant_acompte} € et indiquez votre nom en message
-            </p>
-          </div>
-
-          {/* Virement */}
-          <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
-            <h4 className="text-sm font-semibold text-bordeaux-900">Virement bancaire</h4>
-            {!showVirement ? (
-              <button
-                type="button"
-                onClick={() => setShowVirement(true)}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border-2 border-bordeaux-200 px-6 py-3 text-sm font-semibold text-bordeaux-900 transition-all hover:border-bordeaux-400 hover:bg-bordeaux-50"
-              >
-                Payer par virement
-              </button>
-            ) : (
-              <div className="mt-3 space-y-2 text-sm">
-                <div className="rounded-lg bg-bordeaux-50/50 p-3 text-xs">
-                  <p><span className="text-bordeaux-900/60">Titulaire :</span> <strong>Amina Saydoullayeva</strong></p>
-                  <p className="mt-1"><span className="text-bordeaux-900/60">IBAN :</span> <strong className="font-mono">FR76 1679 8000 0100 0142 3822 381</strong></p>
-                  <p className="mt-1"><span className="text-bordeaux-900/60">BIC :</span> <strong className="font-mono">TRZOFR21XXX</strong></p>
-                  <p className="mt-1"><span className="text-bordeaux-900/60">Montant :</span> <strong>{bookingResult.montant_acompte} €</strong></p>
-                  <p className="mt-1"><span className="text-bordeaux-900/60">Référence :</span> <strong className="font-mono">NAEA-{shortId}</strong></p>
-                </div>
-                <button
-                  type="button"
-                  onClick={copyIban}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-bordeaux-200 px-3 py-2 text-xs font-medium text-bordeaux-700 transition-colors hover:bg-bordeaux-50"
-                >
-                  <Copy size={12} />
-                  {ibanCopied ? "IBAN copié !" : "Copier l'IBAN"}
-                </button>
-                <p className="text-xs text-bordeaux-900/60">
-                  Votre RDV sera confirmé dès réception du virement (sous 24-48h)
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="space-y-3 text-center">
-          <p className="text-xs text-bordeaux-900/60">
-            Vous recevrez un email de confirmation dès que votre acompte est vérifié.
-          </p>
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="text-sm font-medium text-bordeaux-700 underline underline-offset-2 hover:text-bordeaux-900"
-          >
-            Retour au site
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const today = new Date();
   const canGoPrev =
     calMonth.getFullYear() > today.getFullYear() ||
     (calMonth.getFullYear() === today.getFullYear() && calMonth.getMonth() > today.getMonth());
 
+  // --- Validation par étape ---
+  const canNext: Record<StepIdx, boolean> = {
+    0: !!selectedPrestation,
+    1: !!selectedDate && !!selectedSlot,
+    2: !!(prenom && nom && email && telephone && cgvAccepted),
+    3: true,
+  };
+
+  /* ─── RENDU ────────────────────────────────────────── */
   return (
-    <div className="space-y-5">
-      <h3 className="font-display text-2xl text-bordeaux-900">
-        Réserver votre rendez-vous
-      </h3>
+    <div ref={formTopRef}>
+      <Stepper step={step} />
 
-      {/* Prestation */}
-      <div>
-        <label className={labelClass}>
-          Prestation souhaitée <span className="text-or-700">*</span>
-        </label>
-        <select
-          value={selectedPrestation}
-          onChange={(e) => setSelectedPrestation(e.target.value)}
-          required
-          className={inputClass}
+      <AnimatePresence mode="wait" custom={direction}>
+        <motion.div
+          key={step}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
-          <option value="" disabled className="text-gray-400">
-            Choisir une prestation
-          </option>
-          {prestations.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nom} — {p.prix} €
-            </option>
-          ))}
-        </select>
-      </div>
+          {/* ÉTAPE 1 — Choix du soin */}
+          {step === 0 && (
+            <div>
+              <h3 className="font-display text-2xl text-bordeaux-900">
+                Choisissez votre soin
+              </h3>
+              <p className="mt-1 text-sm text-bordeaux-900/60">
+                Sélectionnez la prestation qui vous fait envie.
+              </p>
 
-      {/* Calendrier */}
-      {selectedPrestation && (
-        <div>
-          <label className={labelClass}>
-            Date souhaitée <span className="text-or-700">*</span>
-          </label>
-          <div className="rounded-lg border border-bordeaux-200 bg-white p-4">
-            {/* Header mois */}
-            <div className="mb-3 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))}
-                disabled={!canGoPrev}
-                className="rounded p-1 text-bordeaux-700 hover:bg-bordeaux-50 disabled:opacity-30"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <span className="text-sm font-semibold text-bordeaux-900">
-                {MOIS_LABELS[calMonth.getMonth()]} {calMonth.getFullYear()}
-              </span>
-              <button
-                type="button"
-                onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))}
-                className="rounded p-1 text-bordeaux-700 hover:bg-bordeaux-50"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {prestations.map((p) => {
+                  const selected = selectedPrestation === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedPrestation(p.id)}
+                      className={`group relative flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all ${
+                        selected
+                          ? "border-or-500 bg-or-50/60 shadow-md shadow-or-500/15"
+                          : "border-bordeaux-100 bg-white hover:border-or-300 hover:bg-or-50/30"
+                      }`}
+                      aria-pressed={selected}
+                    >
+                      {selected && (
+                        <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-or-500 text-bordeaux-950">
+                          <Check size={14} />
+                        </span>
+                      )}
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-bordeaux-600">
+                        {p.categorie}
+                      </span>
+                      <h4 className="mt-1.5 font-display text-base text-bordeaux-900 sm:text-lg">
+                        {p.nom}
+                      </h4>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-bordeaux-900/70">
+                        <span className="flex items-center gap-1">
+                          <Clock size={12} /> {p.duree_minutes} min
+                        </span>
+                        <span aria-hidden className="h-3 w-px bg-bordeaux-200" />
+                        <span className="font-semibold text-bordeaux-900">{p.prix} €</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Jours de la semaine */}
-            <div className="mb-1 grid grid-cols-7 text-center text-xs font-medium text-bordeaux-900/50">
-              {JOUR_LABELS.map((j) => (
-                <div key={j} className="py-1">{j}</div>
-              ))}
-            </div>
-
-            {/* Jours */}
-            <div className="grid grid-cols-7 gap-0.5">
-              {calDays.map((day, i) => {
-                if (!day) return <div key={`e-${i}`} />;
-                const available = isDateAvailable(day);
-                const selected = selectedDate && isSameDay(day, selectedDate);
-                return (
-                  <button
-                    key={day.toISOString()}
-                    type="button"
-                    disabled={!available}
-                    onClick={() => setSelectedDate(day)}
-                    className={`rounded-lg py-2 text-sm transition-all ${
-                      selected
-                        ? "bg-or-500 font-semibold text-bordeaux-950"
-                        : available
-                          ? "text-bordeaux-900 hover:bg-or-50"
-                          : "text-gray-300 cursor-default"
-                    }`}
-                  >
-                    {day.getDate()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Créneaux horaires */}
-      {selectedDate && prestation && (
-        <div>
-          <label className={labelClass}>
-            <Clock size={14} className="mr-1 inline" />
-            Créneau horaire <span className="text-or-700">*</span>
-          </label>
-          {slots.length === 0 ? (
-            <p className="text-sm text-bordeaux-900/60">
-              Aucun créneau disponible ce jour. Essayez une autre date.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {slots.map((slot) => (
+              <div className="mt-6 flex justify-end">
                 <button
-                  key={slot}
                   type="button"
-                  onClick={() => setSelectedSlot(slot)}
-                  className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
-                    selectedSlot === slot
-                      ? "border-or-500 bg-or-500 text-bordeaux-950"
-                      : "border-bordeaux-200 text-bordeaux-900 hover:border-or-300 hover:bg-or-50"
-                  }`}
+                  disabled={!canNext[0]}
+                  onClick={() => goTo(1)}
+                  className="inline-flex items-center gap-2 rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:bg-or-400 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {formatTime(parseTimeStart(slot))}
+                  Suivant
+                  <ChevronRight size={16} />
                 </button>
-              ))}
+              </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* Lieu */}
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium text-bordeaux-900">
-          Lieu <span className="text-or-700">*</span>
-        </legend>
-        <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-bordeaux-900">
-            <input
-              type="radio"
-              name="location"
-              value="chez_naea"
-              checked={lieu === "chez_naea"}
-              onChange={() => setLieu("chez_naea")}
-              className="accent-or-500"
-            />
-            Chez Naéa, Nantes
-          </label>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-bordeaux-900">
-            <input
-              type="radio"
-              name="location"
-              value="domicile"
-              checked={lieu === "domicile"}
-              onChange={() => setLieu("domicile")}
-              className="accent-or-500"
-            />
-            À mon domicile
-          </label>
-        </div>
-      </fieldset>
+          {/* ÉTAPE 2 — Date + créneau */}
+          {step === 1 && prestation && (
+            <div>
+              <h3 className="font-display text-2xl text-bordeaux-900">
+                Choisissez votre date et créneau
+              </h3>
+              <p className="mt-1 text-sm text-bordeaux-900/60">
+                {prestation.nom} — {prestation.prix} € — {prestation.duree_minutes} min
+              </p>
 
-      {/* Prénom + Nom */}
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className={labelClass}>
-            Prénom <span className="text-or-700">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            value={prenom}
-            onChange={(e) => setPrenom(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>
-            Nom <span className="text-or-700">*</span>
-          </label>
-          <input
-            type="text"
-            required
-            value={nom}
-            onChange={(e) => setNom(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-      </div>
+              {/* Calendrier */}
+              <div className="mt-6 rounded-xl border border-bordeaux-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1))}
+                    disabled={!canGoPrev}
+                    className="rounded p-1 text-bordeaux-700 hover:bg-bordeaux-50 disabled:opacity-30"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <span className="text-sm font-semibold text-bordeaux-900">
+                    {MOIS_LABELS[calMonth.getMonth()]} {calMonth.getFullYear()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCalMonth(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1))}
+                    className="rounded p-1 text-bordeaux-700 hover:bg-bordeaux-50"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
 
-      {/* Téléphone + Email */}
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label className={labelClass}>
-            Téléphone <span className="text-or-700">*</span>
-          </label>
-          <input
-            type="tel"
-            required
-            value={telephone}
-            onChange={(e) => setTelephone(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>
-            Email <span className="text-or-700">*</span>
-          </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-      </div>
+                <div className="mb-1 grid grid-cols-7 text-center text-xs font-medium text-bordeaux-900/50">
+                  {JOUR_LABELS.map((j) => (
+                    <div key={j} className="py-1">{j}</div>
+                  ))}
+                </div>
 
-      {/* Message */}
-      <div>
-        <label className={labelClass}>
-          Message complémentaire (optionnel)
-        </label>
-        <textarea
-          rows={3}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Précisez vos disponibilités, questions, attentes..."
-          className={`${inputClass} resize-none`}
-        />
-      </div>
+                <div className="grid grid-cols-7 gap-0.5">
+                  {calDays.map((day, i) => {
+                    if (!day) return <div key={`e-${i}`} />;
+                    const available = isDateAvailable(day);
+                    const selected = selectedDate && isSameDay(day, selectedDate);
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        type="button"
+                        disabled={!available}
+                        onClick={() => setSelectedDate(day)}
+                        className={`rounded-lg py-2 text-sm transition-all ${
+                          selected
+                            ? "bg-or-500 font-semibold text-bordeaux-950"
+                            : available
+                              ? "text-bordeaux-900 hover:bg-or-50"
+                              : "cursor-default text-gray-300"
+                        }`}
+                      >
+                        {day.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-      {/* Récapitulatif */}
-      {prestation && selectedDate && selectedSlot && (
-        <div className="rounded-lg border border-or-200 bg-or-50/50 px-4 py-3">
-          <p className="text-sm font-medium text-bordeaux-900">Récapitulatif</p>
-          <p className="mt-1 text-sm text-bordeaux-900/80">
-            {prestation.nom} — {prestation.prix} € — Le{" "}
-            {selectedDate.toLocaleDateString("fr-FR", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}{" "}
-            à {formatTime(parseTimeStart(selectedSlot))} —{" "}
-            {lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}
-          </p>
-        </div>
-      )}
+              {/* Créneaux */}
+              {selectedDate && (
+                <div className="mt-6">
+                  <label className={labelClass}>
+                    <Clock size={14} className="mr-1 inline" />
+                    Créneau horaire
+                  </label>
+                  {slots.length === 0 ? (
+                    <p className="text-sm text-bordeaux-900/60">
+                      Aucun créneau disponible ce jour. Essayez une autre date.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {slots.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => setSelectedSlot(slot)}
+                          className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+                            selectedSlot === slot
+                              ? "border-or-500 bg-or-500 text-bordeaux-950"
+                              : "border-bordeaux-200 text-bordeaux-900 hover:border-or-300 hover:bg-or-50"
+                          }`}
+                        >
+                          {formatTime(parseTimeStart(slot))}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-      {/* CGV checkbox */}
-      <label className="flex cursor-pointer items-start gap-2.5">
-        <input
-          type="checkbox"
-          checked={cgvAccepted}
-          onChange={(e) => setCgvAccepted(e.target.checked)}
-          className="mt-0.5 shrink-0 accent-or-500"
-        />
-        <span className="text-xs leading-relaxed text-bordeaux-900/70">
-          J&apos;accepte les{" "}
-          <button
-            type="button"
-            onClick={() => setShowCgv(true)}
-            className="font-medium text-or-700 underline underline-offset-2 hover:text-or-900"
-          >
-            conditions de réservation
-          </button>{" "}
-          et la politique d&apos;acompte non-remboursable (50% du montant, non restituable en cas d&apos;annulation).
-        </span>
-      </label>
+              <div className="mt-8 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => goTo(0)}
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-bordeaux-200 px-5 py-2.5 text-sm font-medium text-bordeaux-900 transition-colors hover:bg-bordeaux-50"
+                >
+                  <ArrowLeft size={16} />
+                  Retour
+                </button>
+                <button
+                  type="button"
+                  disabled={!canNext[1]}
+                  onClick={() => goTo(2)}
+                  className="inline-flex items-center gap-2 rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:bg-or-400 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Suivant
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
 
-      {/* Modale CGV */}
-      {showCgv && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setShowCgv(false)}
-        >
-          <div
-            className="relative max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-8"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => setShowCgv(false)}
-              className="absolute right-4 top-4 rounded-full p-1 text-bordeaux-600 hover:bg-bordeaux-50"
-            >
-              <X size={20} />
-            </button>
-            <h3 className="font-display text-xl text-bordeaux-900">
-              Conditions de réservation — Naéa Beauty
-            </h3>
-            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-bordeaux-900/80">
-              <li>• Un acompte de 50% du montant de la prestation est demandé pour confirmer votre rendez-vous.</li>
-              <li>• L&apos;acompte est non-remboursable en cas d&apos;annulation.</li>
-              <li>• Toute annulation doit être signalée au moins 24 heures à l&apos;avance.</li>
-              <li>• En cas de retard de plus de 15 minutes sans prévenir, le rendez-vous pourra être annulé et l&apos;acompte conservé.</li>
-              <li>• Les prestations sont réalisées à Nantes, à domicile ou chez Naéa Beauty.</li>
-              <li>• Les résultats peuvent varier selon la nature des cils, sourcils ou dents de chaque cliente.</li>
-              <li>• En réservant, vous confirmez ne pas avoir de contre-indications connues aux soins choisis.</li>
-            </ul>
-            <button
-              type="button"
-              onClick={() => setShowCgv(false)}
-              className="mt-6 w-full rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 transition-all hover:bg-or-400"
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
+          {/* ÉTAPE 3 — Vos infos */}
+          {step === 2 && prestation && selectedDate && (
+            <div>
+              <h3 className="font-display text-2xl text-bordeaux-900">
+                Vos informations
+              </h3>
+              <p className="mt-1 text-sm text-bordeaux-900/60">
+                Pour confirmer votre rendez-vous.
+              </p>
 
-      {/* Submit — type="button" pour éviter double submit via form */}
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={isSubmitting || status === "loading" || !selectedPrestation || !selectedDate || !selectedSlot || !cgvAccepted}
-        className="group relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-sm font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-all hover:shadow-xl hover:shadow-or-500/40 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-        <span className="pointer-events-none absolute inset-0 rounded-full bg-or-300/0 transition-colors group-hover:bg-or-300/20" />
-        <Calendar size={16} className="relative z-10" />
-        <span className="relative z-10">
-          {status === "loading" ? "Envoi..." : "Demander mon RDV"}
-        </span>
-      </button>
+              <div className="mt-6 space-y-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Prénom <span className="text-or-700">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={prenom}
+                      onChange={(e) => setPrenom(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Nom <span className="text-or-700">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={nom}
+                      onChange={(e) => setNom(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
 
-      <p className="text-center text-sm text-bordeaux-900/60">
-        Je vous reviens dans la journée pour confirmer votre créneau.
-      </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className={labelClass}>Téléphone <span className="text-or-700">*</span></label>
+                    <input
+                      type="tel"
+                      required
+                      value={telephone}
+                      onChange={(e) => setTelephone(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Email <span className="text-or-700">*</span></label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
 
-      {status === "error" && (
-        <p className="text-center text-sm text-bordeaux-700">
-          {errorMsg || "Une erreur est survenue."} Vous pouvez aussi me contacter sur Instagram @naea_beauty.
-        </p>
-      )}
+                <fieldset>
+                  <legend className="mb-2 text-sm font-medium text-bordeaux-900">
+                    Lieu <span className="text-or-700">*</span>
+                  </legend>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${lieu === "chez_naea" ? "border-or-500 bg-or-50" : "border-bordeaux-100 hover:border-or-300"}`}>
+                      <input type="radio" name="location" value="chez_naea" checked={lieu === "chez_naea"} onChange={() => setLieu("chez_naea")} className="accent-or-500" />
+                      Chez Naéa
+                    </label>
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-lg border-2 p-3 text-sm transition-all ${lieu === "domicile" ? "border-or-500 bg-or-50" : "border-bordeaux-100 hover:border-or-300"}`}>
+                      <input type="radio" name="location" value="domicile" checked={lieu === "domicile"} onChange={() => setLieu("domicile")} className="accent-or-500" />
+                      À mon domicile
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div>
+                  <label className={labelClass}>Message (optionnel)</label>
+                  <textarea
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Vos précisions, questions, attentes..."
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+
+                <label className="flex cursor-pointer items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={cgvAccepted}
+                    onChange={(e) => setCgvAccepted(e.target.checked)}
+                    className="mt-0.5 shrink-0 accent-or-500"
+                  />
+                  <span className="text-xs leading-relaxed text-bordeaux-900/70">
+                    J&apos;accepte les{" "}
+                    <a href="/cgv" target="_blank" className="font-medium text-or-700 underline underline-offset-2 hover:text-or-900">
+                      conditions de réservation
+                    </a>{" "}
+                    et la politique d&apos;acompte non-remboursable (50%).
+                  </span>
+                </label>
+              </div>
+
+              <div className="mt-8 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => goTo(1)}
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-bordeaux-200 px-5 py-2.5 text-sm font-medium text-bordeaux-900 transition-colors hover:bg-bordeaux-50"
+                >
+                  <ArrowLeft size={16} />
+                  Retour
+                </button>
+                <button
+                  type="button"
+                  disabled={!canNext[2] || isSubmitting || status === "loading"}
+                  onClick={handleSubmit}
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-or-500 px-7 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:bg-or-400 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                  <Calendar size={16} className="relative z-10" />
+                  <span className="relative z-10">
+                    {status === "loading" ? "Envoi..." : "Confirmer"}
+                  </span>
+                </button>
+              </div>
+
+              {status === "error" && (
+                <p className="mt-4 text-center text-sm text-red-700">
+                  {errorMsg}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* ÉTAPE 4 — Récapitulatif + paiement */}
+          {step === 3 && bookingResult && prestation && selectedDate && (
+            <div className="space-y-6">
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, damping: 12 }}
+                className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-or-100"
+              >
+                <Sparkles className="text-or-700" size={32} />
+              </motion.div>
+              <div className="text-center">
+                <h3 className="font-display text-2xl text-bordeaux-900">
+                  Réservation enregistrée !
+                </h3>
+                <p className="mt-2 text-sm text-bordeaux-900/70">
+                  Pour confirmer, versez l&apos;acompte de{" "}
+                  <strong>{bookingResult.montant_acompte} €</strong>
+                </p>
+              </div>
+
+              {/* Récap */}
+              <div className="rounded-lg border border-or-200 bg-or-50/50 px-5 py-4">
+                <p className="text-sm font-semibold text-bordeaux-900">Récapitulatif</p>
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  <dt className="text-bordeaux-900/60">Prestation</dt>
+                  <dd className="text-bordeaux-900">{prestation.nom}</dd>
+                  <dt className="text-bordeaux-900/60">Date</dt>
+                  <dd className="text-bordeaux-900">
+                    {selectedDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}{" "}
+                    à {formatTime(parseTimeStart(selectedSlot))}
+                  </dd>
+                  <dt className="text-bordeaux-900/60">Lieu</dt>
+                  <dd className="text-bordeaux-900">{lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}</dd>
+                  <dt className="text-bordeaux-900/60">Montant total</dt>
+                  <dd className="text-bordeaux-900">{bookingResult.montant_total} €</dd>
+                  <dt className="text-bordeaux-900/60">Acompte (50%)</dt>
+                  <dd className="font-semibold text-bordeaux-900">{bookingResult.montant_acompte} €</dd>
+                </dl>
+              </div>
+
+              {/* Paiement */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
+                  <h4 className="text-sm font-semibold text-bordeaux-900">PayPal</h4>
+                  <a
+                    href={`https://paypal.me/NAEABEAUTY/${bookingResult.montant_acompte}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:shadow-lg hover:shadow-or-500/30"
+                  >
+                    <CreditCard size={16} />
+                    Payer par PayPal
+                  </a>
+                  <p className="mt-3 text-xs text-bordeaux-900/60">
+                    Envoyez {bookingResult.montant_acompte} € et indiquez votre nom en message
+                  </p>
+                </div>
+                <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
+                  <h4 className="text-sm font-semibold text-bordeaux-900">Virement bancaire</h4>
+                  {!showVirement ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowVirement(true)}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border-2 border-bordeaux-200 px-6 py-3 text-sm font-semibold text-bordeaux-900 transition-all hover:border-bordeaux-400 hover:bg-bordeaux-50"
+                    >
+                      Payer par virement
+                    </button>
+                  ) : (
+                    <div className="mt-3 space-y-2 text-sm">
+                      <div className="rounded-lg bg-bordeaux-50/50 p-3 text-xs">
+                        <p><span className="text-bordeaux-900/60">Titulaire :</span> <strong>Amina Saydoullayeva</strong></p>
+                        <p className="mt-1"><span className="text-bordeaux-900/60">IBAN :</span> <strong className="font-mono">FR76 1679 8000 0100 0142 3822 381</strong></p>
+                        <p className="mt-1"><span className="text-bordeaux-900/60">BIC :</span> <strong className="font-mono">TRZOFR21XXX</strong></p>
+                        <p className="mt-1"><span className="text-bordeaux-900/60">Montant :</span> <strong>{bookingResult.montant_acompte} €</strong></p>
+                        <p className="mt-1"><span className="text-bordeaux-900/60">Référence :</span> <strong className="font-mono">NAEA-{shortId}</strong></p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={copyIban}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-bordeaux-200 px-3 py-2 text-xs font-medium text-bordeaux-700 transition-colors hover:bg-bordeaux-50"
+                      >
+                        <Copy size={12} />
+                        {ibanCopied ? "IBAN copié !" : "Copier l'IBAN"}
+                      </button>
+                      <p className="text-xs text-bordeaux-900/60">
+                        Votre RDV sera confirmé dès réception du virement (sous 24-48h)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-center text-xs text-bordeaux-900/60">
+                Vous recevrez un email de confirmation dès que votre acompte est vérifié.
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

@@ -27,6 +27,11 @@ export function SiteFooter() {
               </a>
             </li>
             <li>
+              <a href="#faq" className="hover:text-or-300">
+                FAQ
+              </a>
+            </li>
+            <li>
               <a href="#reserver" className="hover:text-or-300">
                 Réserver
               </a>
@@ -78,8 +83,17 @@ export function SiteFooter() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-or-100/10 px-6 py-6 text-center text-xs text-or-100/50 lg:px-10">
-        © {new Date().getFullYear()} Naéa Beauty — Tous droits réservés
+      <div className="border-t border-or-100/10 px-6 py-6 text-center text-xs text-or-100/60 lg:px-10">
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          <a href="/mentions-legales" className="hover:text-or-300">Mentions légales</a>
+          <span aria-hidden className="text-or-100/30">·</span>
+          <a href="/politique-confidentialite" className="hover:text-or-300">Politique de confidentialité</a>
+          <span aria-hidden className="text-or-100/30">·</span>
+          <a href="/cgv" className="hover:text-or-300">CGV</a>
+        </nav>
+        <p className="mt-3 text-or-100/50">
+          © {new Date().getFullYear()} Naéa Beauty — Tous droits réservés
+        </p>
       </div>
     </footer>
   );

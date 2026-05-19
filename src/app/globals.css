@@ -27,8 +27,8 @@
   --color-cream: #fbf6ef;
   --color-ivoire: #f6efe1;
 
-  --font-display: var(--font-playfair);
-  --font-sans: var(--font-inter);
+  --font-display: var(--font-cormorant);
+  --font-sans: var(--font-outfit);
 }
 
 :root {

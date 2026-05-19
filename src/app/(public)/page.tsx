@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Calendar,
   Clock,
-  Heart,
   MapPin,
   Phone,
   Sparkles,
@@ -23,6 +22,10 @@ import { InstagramIcon, TikTokIcon } from "@/components/social-icons";
 import { ShimmerButton, BorderAnimateButton } from "@/components/shimmer-button";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
+import { TrustBadges } from "@/components/trust-badges";
+import { SignatureSection } from "@/components/signature-section";
+import { StepsSection } from "@/components/steps-section";
+import { FaqSection } from "@/components/faq-section";
 
 /* ─── SECTION ANIMÉE WRAPPER ───────────────────────── */
 function AnimatedSection({
@@ -98,10 +101,12 @@ function GoldLine() {
 /* ─── SCROLL INDICATOR (dots latéraux) ─────────────── */
 const SECTIONS = [
   { id: "hero", label: "Accueil" },
+  { id: "signature", label: "Signature" },
   { id: "prestations", label: "Prestations" },
+  { id: "etapes", label: "Étapes" },
   { id: "avant-apres", label: "Avant / Après" },
   { id: "temoignages", label: "Avis" },
-  { id: "apropos", label: "À propos" },
+  { id: "faq", label: "FAQ" },
   { id: "reserver", label: "Réserver" },
 ];
 
@@ -243,24 +248,7 @@ function HeroSection() {
               </BorderAnimateButton>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.3, duration: 0.6 }}
-              className="mt-8 flex flex-wrap items-center gap-5 text-sm text-white/60"
-            >
-              <span className="flex items-center gap-2">
-                <MapPin size={15} className="text-or-400" /> Sur Nantes
-              </span>
-              <span className="hidden h-3 w-px bg-white/20 sm:block" />
-              <span className="flex items-center gap-2">
-                <Heart size={15} className="text-or-400" /> A domicile ou chez moi
-              </span>
-              <span className="hidden h-3 w-px bg-white/20 sm:block" />
-              <span className="flex items-center gap-2">
-                <Sparkles size={15} className="text-or-400" /> 1h de prestation
-              </span>
-            </motion.div>
+            <TrustBadges />
           </div>
         </div>
       </div>
@@ -278,6 +266,9 @@ export default function Home() {
 
       {/* ── HERO ── */}
       <HeroSection />
+
+      {/* ── PRESTATION SIGNATURE ── */}
+      <SignatureSection />
 
       {/* ── PRESTATIONS (pricing cards) ── */}
       <AnimatedSection id="prestations" className="relative z-10 mx-auto max-w-7xl px-6 py-14 lg:px-10">
@@ -356,6 +347,9 @@ export default function Home() {
         </div>
       </AnimatedSection>
 
+      {/* ── COMMENT ÇA SE PASSE ── */}
+      <StepsSection />
+
       {/* ── AVANT / APRÈS ── */}
       <AnimatedSection
         id="avant-apres"
@@ -411,6 +405,9 @@ export default function Home() {
           </div>
         </div>
       </AnimatedSection>
+
+      {/* ── FAQ ── */}
+      <FaqSection />
 
       {/* ── À PROPOS ── */}
       <AnimatedSection id="apropos" className="relative z-10 py-10">

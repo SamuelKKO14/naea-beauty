@@ -9,7 +9,7 @@ const NAV = [
   { href: "#hero", label: "Accueil" },
   { href: "#prestations", label: "Prestations" },
   { href: "#avant-apres", label: "Avant / Après" },
-  { href: "#reserver", label: "Réserver" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function SiteHeader() {
