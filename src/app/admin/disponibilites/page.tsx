@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase";
 import {
   Save,
   Trash2,
+  Plus,
   ChevronLeft,
   ChevronRight,
   X,
@@ -45,6 +46,12 @@ function getWeekDays(date: Date): Date[] {
   });
 }
 
+function trimTime(t: string) {
+  return t.slice(0, 5);
+}
+
+type ModalPlage = { heure_debut: string; heure_fin: string };
+
 export default function DisponibilitesPage() {
   const [dispos, setDispos] = useState<Disponibilite[]>([]);
   const [dispoSpec, setDispoSpec] = useState<DisponibiliteSpecifique[]>([]);
@@ -55,9 +62,7 @@ export default function DisponibilitesPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [modalDate, setModalDate] = useState<Date | null>(null);
-  const [modalDispo, setModalDispo] = useState(true);
-  const [modalDebut, setModalDebut] = useState("09:00");
-  const [modalFin, setModalFin] = useState("19:00");
+  const [modalPlages, setModalPlages] = useState<ModalPlage[]>([]);
   const [modalSaving, setModalSaving] = useState(false);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
@@ -71,7 +76,7 @@ export default function DisponibilitesPage() {
   const load = useCallback(async () => {
     const [{ data: d }, { data: ds }, { data: i }] = await Promise.all([
       supabase.from("disponibilites").select("*").order("jour_semaine"),
-      supabase.from("disponibilites_specifiques").select("*").order("date_jour"),
+      supabase.from("disponibilites_specifiques").select("*").order("date_jour").order("heure_debut"),
       supabase.from("indisponibilites").select("*").order("date_debut", { ascending: false }),
     ]);
     setDispos(d || []);
@@ -82,132 +87,161 @@ export default function DisponibilitesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // --- Dispos spécifiques map ---
+  // Index : Map<dateStr, DisponibiliteSpecifique[]> (toutes les plages actives du jour)
   const dispoSpecMap = useMemo(() => {
-    const m = new Map<string, DisponibiliteSpecifique>();
-    dispoSpec.forEach((ds) => m.set(ds.date_jour, ds));
+    const m = new Map<string, DisponibiliteSpecifique[]>();
+    dispoSpec.forEach((ds) => {
+      if (!ds.actif) return;
+      const arr = m.get(ds.date_jour) || [];
+      arr.push(ds);
+      m.set(ds.date_jour, arr);
+    });
+    // Tri ascendant par heure_debut pour chaque jour
+    m.forEach((arr) => arr.sort((a, b) => a.heure_debut.localeCompare(b.heure_debut)));
     return m;
   }, [dispoSpec]);
 
-  // --- Is date indisponible ---
   const isIndispo = useCallback(
     (dateStr: string) => indispos.some((i) => dateStr >= i.date_debut && dateStr <= i.date_fin),
     [indispos]
   );
 
-  // --- Calendar days ---
   const calDays = useMemo(() => {
     const year = calMonth.getFullYear();
     const month = calMonth.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    let startOffset = (firstDay.getDay() + 6) % 7;
+    const startOffset = (firstDay.getDay() + 6) % 7;
     const days: (Date | null)[] = [];
     for (let i = 0; i < startOffset; i++) days.push(null);
     for (let d = 1; d <= lastDay.getDate(); d++) days.push(new Date(year, month, d));
     return days;
   }, [calMonth]);
 
-  // --- Day status ---
   function getDayStatus(date: Date): "past" | "blocked" | "available" | "empty" {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (date < today) return "past";
     const ds = dateToStr(date);
     if (isIndispo(ds)) return "blocked";
-    const spec = dispoSpecMap.get(ds);
-    if (spec && spec.actif) return "available";
+    const plages = dispoSpecMap.get(ds);
+    if (plages && plages.length > 0) return "available";
     return "empty";
   }
 
-  // --- Open modal ---
+  // --- Modale : ouvre avec toutes les plages du jour ---
   function openModal(date: Date) {
     const ds = dateToStr(date);
-    const spec = dispoSpecMap.get(ds);
+    const plages = dispoSpecMap.get(ds);
     setModalDate(date);
-    if (spec) {
-      setModalDispo(spec.actif);
-      setModalDebut(spec.heure_debut.slice(0, 5));
-      setModalFin(spec.heure_fin.slice(0, 5));
+    if (plages && plages.length > 0) {
+      setModalPlages(
+        plages.map((p) => ({
+          heure_debut: trimTime(p.heure_debut),
+          heure_fin: trimTime(p.heure_fin),
+        }))
+      );
     } else {
-      setModalDispo(true);
-      setModalDebut("09:00");
-      setModalFin("19:00");
+      setModalPlages([{ heure_debut: "09:00", heure_fin: "19:00" }]);
     }
   }
 
-  // --- Save day dispo ---
+  function addPlage() {
+    setModalPlages((prev) => [...prev, { heure_debut: "14:00", heure_fin: "18:00" }]);
+  }
+
+  function removePlage(idx: number) {
+    setModalPlages((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function updatePlage(idx: number, field: "heure_debut" | "heure_fin", value: string) {
+    setModalPlages((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, [field]: value } : p))
+    );
+  }
+
+  // --- Save : DELETE all + INSERT new ---
   async function saveDay() {
     if (!modalDate) return;
-    if (modalDispo && modalDebut >= modalFin && modalFin !== "00:00") {
-      flash("err", "L'heure de fin doit être après l'heure de début.");
-      return;
+
+    // Validation : chaque plage doit avoir debut < fin (sauf si fin = 00:00 = minuit)
+    for (const p of modalPlages) {
+      if (!p.heure_debut || !p.heure_fin) {
+        flash("err", "Toutes les plages doivent avoir un début et une fin.");
+        return;
+      }
+      if (p.heure_debut >= p.heure_fin && p.heure_fin !== "00:00") {
+        flash("err", `Plage invalide : ${p.heure_debut} → ${p.heure_fin} (fin doit être après début).`);
+        return;
+      }
     }
+
     setModalSaving(true);
     const ds = dateToStr(modalDate);
-    const existing = dispoSpecMap.get(ds);
 
-    console.log("[saveDay]", { ds, existingId: existing?.id, modalDispo, modalDebut, modalFin });
+    console.log("[saveDay] multi-plages", { ds, plages: modalPlages });
 
-    let error;
-    if (modalDispo) {
-      if (existing) {
-        ({ error } = await supabase.from("disponibilites_specifiques").update({
-          heure_debut: modalDebut,
-          heure_fin: modalFin,
-          actif: true,
-        }).eq("id", existing.id));
-      } else {
-        ({ error } = await supabase.from("disponibilites_specifiques").insert({
-          date_jour: ds,
-          heure_debut: modalDebut,
-          heure_fin: modalFin,
-          actif: true,
-        }));
-      }
-    } else if (existing) {
-      ({ error } = await supabase
-        .from("disponibilites_specifiques")
-        .update({ actif: false })
-        .eq("id", existing.id));
-    }
+    // 1. DELETE toutes les lignes existantes pour ce jour
+    const { error: delError } = await supabase
+      .from("disponibilites_specifiques")
+      .delete()
+      .eq("date_jour", ds);
 
-    if (error) {
-      console.error("[saveDay] error", error);
-      flash("err", `Erreur d'enregistrement : ${error.message}`);
+    if (delError) {
+      console.error("[saveDay] delete error", delError);
+      flash("err", `Erreur (delete) : ${delError.message}`);
       setModalSaving(false);
       return;
+    }
+
+    // 2. INSERT les nouvelles plages (si présentes)
+    if (modalPlages.length > 0) {
+      const rows = modalPlages.map((p) => ({
+        date_jour: ds,
+        heure_debut: p.heure_debut,
+        heure_fin: p.heure_fin,
+        actif: true,
+      }));
+      const { error: insError } = await supabase
+        .from("disponibilites_specifiques")
+        .insert(rows);
+      if (insError) {
+        console.error("[saveDay] insert error", insError);
+        flash("err", `Erreur (insert) : ${insError.message}`);
+        setModalSaving(false);
+        return;
+      }
     }
 
     await load();
     setModalSaving(false);
     setModalDate(null);
-    flash("ok", "Disponibilité enregistrée.");
+    flash(
+      "ok",
+      modalPlages.length === 0
+        ? "Jour marqué indisponible."
+        : `${modalPlages.length} plage(s) enregistrée(s).`
+    );
   }
 
-  // --- Delete day dispo ---
+  // --- Supprimer toutes les plages du jour ---
   async function deleteDay() {
     if (!modalDate) return;
     const ds = dateToStr(modalDate);
-    const existing = dispoSpecMap.get(ds);
-    if (existing) {
-      const { error } = await supabase
-        .from("disponibilites_specifiques")
-        .delete()
-        .eq("id", existing.id);
-      if (error) {
-        console.error("[deleteDay] error", error);
-        flash("err", `Erreur lors de la suppression : ${error.message}`);
-        return;
-      }
-      await load();
-      flash("ok", "Disponibilité supprimée.");
+    const { error } = await supabase
+      .from("disponibilites_specifiques")
+      .delete()
+      .eq("date_jour", ds);
+    if (error) {
+      console.error("[deleteDay]", error);
+      flash("err", `Erreur lors de la suppression : ${error.message}`);
+      return;
     }
+    await load();
     setModalDate(null);
+    flash("ok", "Disponibilités du jour supprimées.");
   }
 
-  // Détermine la semaine cible : si on regarde le mois courant → semaine de "aujourd'hui",
-  // sinon → première semaine du mois affiché (jour 1).
   function targetWeekDays(): Date[] {
     const today = new Date();
     const sameMonth =
@@ -217,13 +251,16 @@ export default function DisponibilitesPage() {
     return getWeekDays(ref);
   }
 
-  // --- Apply default week ---
+  // --- Apply default week : 1 plage par jour selon le modèle hebdo ---
   async function applyDefaultWeek() {
     const weekDays = targetWeekDays();
     const todayCheck = new Date();
     todayCheck.setHours(0, 0, 0, 0);
 
-    const inserts: { date_jour: string; heure_debut: string; heure_fin: string; actif: boolean }[] = [];
+    type Row = { date_jour: string; heure_debut: string; heure_fin: string; actif: boolean };
+    const datesToReplace: string[] = [];
+    const inserts: Row[] = [];
+
     for (const day of weekDays) {
       const ds = dateToStr(day);
       if (day < todayCheck) continue;
@@ -232,6 +269,7 @@ export default function DisponibilitesPage() {
       const dbDay = jsToDbDay(day.getDay());
       const defaultDispo = dispos.find((d) => d.jour_semaine === dbDay && d.actif);
       if (defaultDispo) {
+        datesToReplace.push(ds);
         inserts.push({
           date_jour: ds,
           heure_debut: defaultDispo.heure_debut,
@@ -245,19 +283,30 @@ export default function DisponibilitesPage() {
       flash("err", "Aucun horaire hebdo à appliquer pour cette semaine.");
       return;
     }
-    const { error } = await supabase
+
+    // DELETE puis INSERT (pour ne pas dupliquer si des plages existent déjà)
+    const { error: delError } = await supabase
       .from("disponibilites_specifiques")
-      .upsert(inserts, { onConflict: "date_jour" });
-    if (error) {
-      console.error("[applyDefaultWeek]", error);
-      flash("err", `Erreur : ${error.message}`);
+      .delete()
+      .in("date_jour", datesToReplace);
+    if (delError) {
+      console.error("[applyDefaultWeek] delete", delError);
+      flash("err", `Erreur : ${delError.message}`);
+      return;
+    }
+    const { error: insError } = await supabase
+      .from("disponibilites_specifiques")
+      .insert(inserts);
+    if (insError) {
+      console.error("[applyDefaultWeek] insert", insError);
+      flash("err", `Erreur : ${insError.message}`);
       return;
     }
     await load();
     flash("ok", `${inserts.length} jour(s) configuré(s).`);
   }
 
-  // --- Copy previous week ---
+  // --- Copy previous week : copie toutes les plages de la semaine précédente ---
   async function copyPrevWeek() {
     const currentWeek = targetWeekDays();
     const prevWeek = currentWeek.map((d) => {
@@ -268,20 +317,27 @@ export default function DisponibilitesPage() {
 
     const todayCheck = new Date();
     todayCheck.setHours(0, 0, 0, 0);
-    const inserts: { date_jour: string; heure_debut: string; heure_fin: string; actif: boolean }[] = [];
+
+    type Row = { date_jour: string; heure_debut: string; heure_fin: string; actif: boolean };
+    const datesToReplace: string[] = [];
+    const inserts: Row[] = [];
+
     for (let i = 0; i < 7; i++) {
       const prevDs = dateToStr(prevWeek[i]);
       const curDs = dateToStr(currentWeek[i]);
       if (currentWeek[i] < todayCheck) continue;
 
-      const prevSpec = dispoSpecMap.get(prevDs);
-      if (prevSpec && prevSpec.actif) {
-        inserts.push({
-          date_jour: curDs,
-          heure_debut: prevSpec.heure_debut,
-          heure_fin: prevSpec.heure_fin,
-          actif: true,
-        });
+      const prevPlages = dispoSpecMap.get(prevDs);
+      if (prevPlages && prevPlages.length > 0) {
+        datesToReplace.push(curDs);
+        for (const p of prevPlages) {
+          inserts.push({
+            date_jour: curDs,
+            heure_debut: p.heure_debut,
+            heure_fin: p.heure_fin,
+            actif: true,
+          });
+        }
       }
     }
 
@@ -289,19 +345,28 @@ export default function DisponibilitesPage() {
       flash("err", "Aucune dispo trouvée la semaine précédente.");
       return;
     }
-    const { error } = await supabase
+
+    const { error: delError } = await supabase
       .from("disponibilites_specifiques")
-      .upsert(inserts, { onConflict: "date_jour" });
-    if (error) {
-      console.error("[copyPrevWeek]", error);
-      flash("err", `Erreur : ${error.message}`);
+      .delete()
+      .in("date_jour", datesToReplace);
+    if (delError) {
+      console.error("[copyPrevWeek] delete", delError);
+      flash("err", `Erreur : ${delError.message}`);
+      return;
+    }
+    const { error: insError } = await supabase
+      .from("disponibilites_specifiques")
+      .insert(inserts);
+    if (insError) {
+      console.error("[copyPrevWeek] insert", insError);
+      flash("err", `Erreur : ${insError.message}`);
       return;
     }
     await load();
-    flash("ok", `${inserts.length} jour(s) copié(s).`);
+    flash("ok", `${inserts.length} plage(s) copiée(s).`);
   }
 
-  // --- Block entire week ---
   async function blockWeek() {
     if (!confirm("Bloquer toute la semaine ? Les dispos existantes seront supprimées.")) return;
     const weekDays = targetWeekDays();
@@ -363,7 +428,6 @@ export default function DisponibilitesPage() {
           </div>
         </div>
 
-        {/* Actions rapides */}
         <div className="flex flex-wrap gap-2 border-b border-gray-50 px-5 py-3">
           <button onClick={applyDefaultWeek} className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700">
             <CalendarDays size={14} />
@@ -379,7 +443,6 @@ export default function DisponibilitesPage() {
           </button>
         </div>
 
-        {/* Légende */}
         <div className="flex flex-wrap gap-4 px-5 py-2 text-xs text-gray-500">
           <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-green-50 border border-green-200" /> Disponible</span>
           <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-white border border-gray-200" /> Non défini</span>
@@ -387,30 +450,50 @@ export default function DisponibilitesPage() {
           <span className="flex items-center gap-1.5"><span className="inline-block h-3 w-3 rounded bg-gray-100 border border-gray-200" /> Passé</span>
         </div>
 
-        {/* Jours semaine header */}
         <div className="grid grid-cols-7 border-b border-gray-100 text-center text-xs font-medium text-gray-500">
           {JOURS.map((j) => <div key={j} className="py-2">{j.slice(0, 3)}</div>)}
         </div>
 
-        {/* Grille */}
         <div className="grid grid-cols-7 gap-px bg-gray-100 p-px">
           {calDays.map((day, i) => {
-            if (!day) return <div key={`e-${i}`} className="bg-white p-2 min-h-[72px]" />;
+            if (!day) return <div key={`e-${i}`} className="bg-white p-2 min-h-[84px]" />;
             const status = getDayStatus(day);
             const ds = dateToStr(day);
-            const spec = dispoSpecMap.get(ds);
+            const plages = dispoSpecMap.get(ds) || [];
+            const count = plages.length;
+            const tooltip =
+              count > 0
+                ? plages
+                    .map((p) => `${trimTime(p.heure_debut)}–${trimTime(p.heure_fin)}`)
+                    .join(" · ")
+                : undefined;
             return (
               <button
                 key={ds}
                 type="button"
                 disabled={status === "past"}
                 onClick={() => status !== "past" && openModal(day)}
-                className={`min-h-[72px] p-2 text-left transition-colors ${dayColors[status]}`}
+                title={tooltip}
+                className={`relative min-h-[84px] p-2 text-left transition-colors ${dayColors[status]}`}
               >
-                <span className="text-sm">{day.getDate()}</span>
-                {spec && spec.actif && (
-                  <p className="mt-0.5 text-[10px] leading-tight text-green-600">
-                    {spec.heure_debut.slice(0, 5)}–{spec.heure_fin.slice(0, 5)}
+                <div className="flex items-start justify-between">
+                  <span className="text-sm">{day.getDate()}</span>
+                  {count > 1 && (
+                    <span className="ml-1 grid h-5 min-w-[20px] place-items-center rounded-full bg-green-600 px-1 text-[10px] font-bold text-white">
+                      {count}
+                    </span>
+                  )}
+                  {count === 1 && (
+                    <span className="ml-1 inline-block h-2 w-2 rounded-full bg-green-600" />
+                  )}
+                </div>
+                {count > 0 && (
+                  <p className="mt-1 line-clamp-2 text-[10px] leading-tight text-green-700">
+                    {plages
+                      .slice(0, 2)
+                      .map((p) => `${trimTime(p.heure_debut)}–${trimTime(p.heure_fin)}`)
+                      .join(" · ")}
+                    {count > 2 && ` · +${count - 2}`}
                   </p>
                 )}
                 {status === "blocked" && (
@@ -422,10 +505,10 @@ export default function DisponibilitesPage() {
         </div>
       </div>
 
-      {/* ── MODALE JOUR ── */}
+      {/* ── MODALE MULTI-PLAGES ── */}
       {modalDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setModalDate(null)}>
-          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}>
             <button type="button" onClick={() => setModalDate(null)} className="absolute right-3 top-3 rounded-full p-1 text-gray-400 hover:bg-gray-100">
               <X size={18} />
             </button>
@@ -433,56 +516,76 @@ export default function DisponibilitesPage() {
             <h3 className="font-semibold text-gray-900">
               {modalDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Définis une ou plusieurs plages horaires pour ce jour.
+            </p>
 
-            <div className="mt-5 space-y-4">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={modalDispo}
-                  onChange={(e) => setModalDispo(e.target.checked)}
-                  className="accent-green-600"
-                />
-                <span className="text-sm font-medium text-gray-900">Disponible ce jour</span>
-              </label>
-
-              {modalDispo && (
-                <div className="flex items-center gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">Début</label>
-                    <input type="time" value={modalDebut} onChange={(e) => setModalDebut(e.target.value)} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
-                  </div>
-                  <span className="mt-5 text-sm text-gray-400">à</span>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-500">Fin</label>
-                    <input type="time" value={modalFin} onChange={(e) => setModalFin(e.target.value)} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
-                  </div>
+            <div className="mt-5 space-y-3">
+              {modalPlages.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                  Aucune plage — ce jour sera indisponible.
                 </div>
+              ) : (
+                modalPlages.map((p, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="w-14 text-xs font-medium text-gray-500">Plage {idx + 1}</span>
+                    <input
+                      type="time"
+                      value={p.heure_debut}
+                      onChange={(e) => updatePlage(idx, "heure_debut", e.target.value)}
+                      className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                    />
+                    <span className="text-xs text-gray-400">à</span>
+                    <input
+                      type="time"
+                      value={p.heure_fin}
+                      onChange={(e) => updatePlage(idx, "heure_fin", e.target.value)}
+                      className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePlage(idx)}
+                      className="rounded-full p-1.5 text-red-500 hover:bg-red-50"
+                      title="Supprimer cette plage"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))
               )}
 
-              <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={addPlage}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:border-bordeaux-400 hover:bg-bordeaux-50 hover:text-bordeaux-700"
+              >
+                <Plus size={14} />
+                Ajouter une plage
+              </button>
+            </div>
+
+            <div className="mt-6 flex gap-2">
+              <button
+                onClick={saveDay}
+                disabled={modalSaving}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
+              >
+                <Save size={14} />
+                {modalSaving ? "…" : "Enregistrer"}
+              </button>
+              {(dispoSpecMap.get(dateToStr(modalDate))?.length ?? 0) > 0 && (
                 <button
-                  onClick={saveDay}
-                  disabled={modalSaving}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
+                  onClick={deleteDay}
+                  className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
                 >
-                  <Save size={14} />
-                  {modalSaving ? "…" : "Enregistrer"}
+                  <Trash2 size={14} />
+                  Tout supprimer
                 </button>
-                {dispoSpecMap.has(dateToStr(modalDate)) && (
-                  <button
-                    onClick={deleteDay}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 size={14} />
-                    Supprimer
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

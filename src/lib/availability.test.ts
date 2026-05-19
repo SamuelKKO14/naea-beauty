@@ -11,10 +11,10 @@ import {
   type BookedSlotLike,
 } from "@/lib/availability";
 
-const dispo = (
+const plage = (
   opts: Partial<DisponibiliteSpecifique> & { date_jour: string; heure_debut: string; heure_fin: string }
 ): DisponibiliteSpecifique => ({
-  id: "id",
+  id: `id-${opts.date_jour}-${opts.heure_debut}`,
   actif: true,
   created_at: "2026-01-01T00:00:00Z",
   ...opts,
@@ -68,15 +68,15 @@ describe("isDateInIndispo", () => {
   });
 });
 
-describe("generateSlots", () => {
+describe("generateSlots — mono-plage", () => {
   const noIndispo: Array<{ date_debut: string; date_fin: string }> = [];
   const noBooked: BookedSlotLike[] = [];
 
-  it("retourne [] si pas de dispo", () => {
+  it("retourne [] si aucune plage", () => {
     expect(
       generateSlots({
         dateStr: "2026-05-20",
-        dispo: undefined,
+        dispos: [],
         dureeMinutes: 60,
         battementMinutes: 30,
         indispos: noIndispo,
@@ -85,16 +85,18 @@ describe("generateSlots", () => {
     ).toEqual([]);
   });
 
-  it("retourne [] si dispo inactive", () => {
+  it("retourne [] si toutes les plages sont inactives", () => {
     expect(
       generateSlots({
         dateStr: "2026-05-20",
-        dispo: dispo({
-          date_jour: "2026-05-20",
-          heure_debut: "09:00:00",
-          heure_fin: "12:00:00",
-          actif: false,
-        }),
+        dispos: [
+          plage({
+            date_jour: "2026-05-20",
+            heure_debut: "09:00:00",
+            heure_fin: "12:00:00",
+            actif: false,
+          }),
+        ],
         dureeMinutes: 60,
         battementMinutes: 30,
         indispos: noIndispo,
@@ -106,26 +108,24 @@ describe("generateSlots", () => {
   it("génère les créneaux d'une plage simple 9h-12h, durée 60, battement 30", () => {
     const slots = generateSlots({
       dateStr: "2026-05-20",
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "12:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "12:00:00" })],
       dureeMinutes: 60,
       battementMinutes: 30,
       indispos: noIndispo,
       bookedSlots: noBooked,
     });
-    // step = 90. t=540 (09:00), t=630 (10:30). t=720 (12:00) → 12+60=13:00 > 12:00 → stop. Avant : 630+60=11:30 <= 12:00 OK
     expect(slots).toEqual(["09:00", "10:30"]);
   });
 
   it("BUG-FIX critique : heure_fin = 00:00 traitée comme minuit fin de journée", () => {
     const slots = generateSlots({
       dateStr: "2026-05-20",
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" })],
       dureeMinutes: 60,
       battementMinutes: 30,
       indispos: noIndispo,
       bookedSlots: noBooked,
     });
-    // step=90. t=1230(20:30), t=1320(22:00). 1320+60=23:00<=24:00 OK. t=1410(23:30) +60=24:30 > 24:00 stop.
     expect(slots).toEqual(["20:30", "22:00"]);
   });
 
@@ -133,11 +133,11 @@ describe("generateSlots", () => {
     expect(
       generateSlots({
         dateStr: "2026-05-20",
-        dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "12:00:00" }),
+        dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "12:00:00" })],
         dureeMinutes: 60,
         battementMinutes: 30,
         indispos: [{ date_debut: "2026-05-19", date_fin: "2026-05-21" }],
-        bookedSlots: noBooked,
+        bookedSlots: [],
       })
     ).toEqual([]);
   });
@@ -145,7 +145,7 @@ describe("generateSlots", () => {
   it("exclut les créneaux qui chevauchent une réservation existante", () => {
     const slots = generateSlots({
       dateStr: "2026-05-20",
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "13:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "13:00:00" })],
       dureeMinutes: 60,
       battementMinutes: 30,
       indispos: noIndispo,
@@ -157,21 +157,94 @@ describe("generateSlots", () => {
         },
       ],
     });
-    // step=90, t=09:00, t=10:30 (chevauche), t=12:00 (12+60=13 <=13 OK)
     expect(slots).toEqual(["09:00", "12:00"]);
+  });
+});
+
+describe("generateSlots — multi-plages", () => {
+  it("combine 2 plages distinctes, créneaux triés", () => {
+    const slots = generateSlots({
+      dateStr: "2026-05-20",
+      dispos: [
+        plage({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" }),
+        plage({ date_jour: "2026-05-20", heure_debut: "08:30:00", heure_fin: "11:00:00" }),
+      ],
+      dureeMinutes: 60,
+      battementMinutes: 30,
+      indispos: [],
+      bookedSlots: [],
+    });
+    // Plage 08:30-11:00 → 08:30, 10:00 (10:00+60=11:00 OK)
+    // Plage 20:30-00:00 → 20:30, 22:00
+    // Tri ascendant : 08:30, 10:00, 20:30, 22:00
+    expect(slots).toEqual(["08:30", "10:00", "20:30", "22:00"]);
+  });
+
+  it("le battement ne saute PAS entre plages distinctes", () => {
+    const slots = generateSlots({
+      dateStr: "2026-05-20",
+      dispos: [
+        plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "10:00:00" }),
+        plage({ date_jour: "2026-05-20", heure_debut: "10:00:00", heure_fin: "11:00:00" }),
+      ],
+      dureeMinutes: 60,
+      battementMinutes: 30,
+      indispos: [],
+      bookedSlots: [],
+    });
+    // Plage 1 : 09:00 (09:00+60=10:00 ok). Plage 2 : 10:00 (10:00+60=11:00 ok)
+    expect(slots).toEqual(["09:00", "10:00"]);
+  });
+
+  it("ignore les plages inactives mais traite les autres", () => {
+    const slots = generateSlots({
+      dateStr: "2026-05-20",
+      dispos: [
+        plage({ date_jour: "2026-05-20", heure_debut: "08:00:00", heure_fin: "09:30:00", actif: false }),
+        plage({ date_jour: "2026-05-20", heure_debut: "14:00:00", heure_fin: "15:30:00" }),
+      ],
+      dureeMinutes: 60,
+      battementMinutes: 30,
+      indispos: [],
+      bookedSlots: [],
+    });
+    expect(slots).toEqual(["14:00"]);
+  });
+
+  it("une réservation peut bloquer un créneau dans une plage sans affecter l'autre", () => {
+    const slots = generateSlots({
+      dateStr: "2026-05-20",
+      dispos: [
+        plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "12:00:00" }),
+        plage({ date_jour: "2026-05-20", heure_debut: "14:00:00", heure_fin: "17:00:00" }),
+      ],
+      dureeMinutes: 60,
+      battementMinutes: 30,
+      indispos: [],
+      bookedSlots: [
+        {
+          date_rdv: "2026-05-20",
+          heure_rdv: "10:30:00",
+          prestation: [{ duree_minutes: 60 }],
+        },
+      ],
+    });
+    // P1 : 09:00 ok, 10:30 conflit (sauté)
+    // P2 : 14:00, 15:30
+    expect(slots).toEqual(["09:00", "14:00", "15:30"]);
   });
 });
 
 describe("validateSlot — server-side validation", () => {
   const today = "2026-05-19";
 
-  it("OK : créneau valide", () => {
+  it("OK : créneau valide (1 plage)", () => {
     expect(
       validateSlot({
         dateStr: "2026-05-20",
         heureStr: "10:00",
         dureeMinutes: 60,
-        dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
+        dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
         indispos: [],
         conflictingReservations: [],
         nowDateStr: today,
@@ -179,70 +252,32 @@ describe("validateSlot — server-side validation", () => {
     ).toEqual({ ok: true });
   });
 
-  it("REJET : date passée", () => {
-    const r = validateSlot({
-      dateStr: "2026-05-18",
-      heureStr: "10:00",
-      dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-18", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
-      indispos: [],
-      conflictingReservations: [],
-      nowDateStr: today,
-    });
-    expect(r.ok).toBe(false);
+  it("OK : créneau dans la 2e plage (multi-plages)", () => {
+    expect(
+      validateSlot({
+        dateStr: "2026-05-20",
+        heureStr: "21:30",
+        dureeMinutes: 60,
+        dispos: [
+          plage({ date_jour: "2026-05-20", heure_debut: "08:30:00", heure_fin: "11:00:00" }),
+          plage({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" }),
+        ],
+        indispos: [],
+        conflictingReservations: [],
+        nowDateStr: today,
+      })
+    ).toEqual({ ok: true });
   });
 
-  it("REJET : date = aujourd'hui (préavis 24h)", () => {
-    const r = validateSlot({
-      dateStr: today,
-      heureStr: "23:00",
-      dureeMinutes: 60,
-      dispo: dispo({ date_jour: today, heure_debut: "09:00:00", heure_fin: "00:00:00" }),
-      indispos: [],
-      conflictingReservations: [],
-      nowDateStr: today,
-    });
-    expect(r.ok).toBe(false);
-  });
-
-  it("REJET : aucune dispo spécifique pour la date (CRITIQUE)", () => {
-    const r = validateSlot({
-      dateStr: "2026-05-23",
-      heureStr: "13:30",
-      dureeMinutes: 60,
-      dispo: undefined,
-      indispos: [],
-      conflictingReservations: [],
-      nowDateStr: today,
-    });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.reason).toMatch(/Aucune disponibilité/i);
-  });
-
-  it("REJET : dispo inactive", () => {
+  it("REJET : créneau ENTRE deux plages (multi-plages)", () => {
     const r = validateSlot({
       dateStr: "2026-05-20",
-      heureStr: "10:00",
+      heureStr: "13:00",
       dureeMinutes: 60,
-      dispo: dispo({
-        date_jour: "2026-05-20",
-        heure_debut: "09:00:00",
-        heure_fin: "18:00:00",
-        actif: false,
-      }),
-      indispos: [],
-      conflictingReservations: [],
-      nowDateStr: today,
-    });
-    expect(r.ok).toBe(false);
-  });
-
-  it("REJET : heure hors plage (avant heure_debut)", () => {
-    const r = validateSlot({
-      dateStr: "2026-05-20",
-      heureStr: "08:00",
-      dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
+      dispos: [
+        plage({ date_jour: "2026-05-20", heure_debut: "08:30:00", heure_fin: "11:00:00" }),
+        plage({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" }),
+      ],
       indispos: [],
       conflictingReservations: [],
       nowDateStr: today,
@@ -251,26 +286,85 @@ describe("validateSlot — server-side validation", () => {
     if (!r.ok) expect(r.reason).toMatch(/hors des horaires/i);
   });
 
+  it("REJET : date passée", () => {
+    const r = validateSlot({
+      dateStr: "2026-05-18",
+      heureStr: "10:00",
+      dureeMinutes: 60,
+      dispos: [plage({ date_jour: "2026-05-18", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
+      indispos: [],
+      conflictingReservations: [],
+      nowDateStr: today,
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it("REJET : aucune plage pour la date (CRITIQUE)", () => {
+    const r = validateSlot({
+      dateStr: "2026-05-23",
+      heureStr: "13:30",
+      dureeMinutes: 60,
+      dispos: [],
+      indispos: [],
+      conflictingReservations: [],
+      nowDateStr: today,
+    });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toMatch(/Aucune disponibilité/i);
+  });
+
+  it("REJET : toutes les plages inactives", () => {
+    const r = validateSlot({
+      dateStr: "2026-05-20",
+      heureStr: "10:00",
+      dureeMinutes: 60,
+      dispos: [
+        plage({
+          date_jour: "2026-05-20",
+          heure_debut: "09:00:00",
+          heure_fin: "18:00:00",
+          actif: false,
+        }),
+      ],
+      indispos: [],
+      conflictingReservations: [],
+      nowDateStr: today,
+    });
+    expect(r.ok).toBe(false);
+  });
+
+  it("REJET : heure hors plage (avant)", () => {
+    const r = validateSlot({
+      dateStr: "2026-05-20",
+      heureStr: "08:00",
+      dureeMinutes: 60,
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
+      indispos: [],
+      conflictingReservations: [],
+      nowDateStr: today,
+    });
+    expect(r.ok).toBe(false);
+  });
+
   it("REJET : heure hors plage (dépasse heure_fin)", () => {
     const r = validateSlot({
       dateStr: "2026-05-20",
       heureStr: "17:30",
       dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
       indispos: [],
       conflictingReservations: [],
       nowDateStr: today,
     });
-    // 17:30 + 60 = 18:30 > 18:00
     expect(r.ok).toBe(false);
   });
 
-  it("OK : heure_fin = 00:00 traitée comme minuit (slot 23:00-23:59 valide)", () => {
+  it("OK : heure_fin = 00:00 traitée comme minuit", () => {
     const r = validateSlot({
       dateStr: "2026-05-20",
       heureStr: "23:00",
       dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "20:30:00", heure_fin: "00:00:00" })],
       indispos: [],
       conflictingReservations: [],
       nowDateStr: today,
@@ -278,12 +372,12 @@ describe("validateSlot — server-side validation", () => {
     expect(r.ok).toBe(true);
   });
 
-  it("REJET : date marquée en indisponibilité (CRITIQUE)", () => {
+  it("REJET : indisponibilité (CRITIQUE)", () => {
     const r = validateSlot({
       dateStr: "2026-05-20",
       heureStr: "10:00",
       dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
       indispos: [{ date_debut: "2026-05-19", date_fin: "2026-05-25" }],
       conflictingReservations: [],
       nowDateStr: today,
@@ -292,12 +386,12 @@ describe("validateSlot — server-side validation", () => {
     if (!r.ok) expect(r.reason).toMatch(/indisponible/i);
   });
 
-  it("REJET : conflit avec une réservation existante (chevauchement)", () => {
+  it("REJET : conflit avec une réservation existante", () => {
     const r = validateSlot({
       dateStr: "2026-05-20",
       heureStr: "10:30",
       dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
       indispos: [],
       conflictingReservations: [
         {
@@ -317,7 +411,7 @@ describe("validateSlot — server-side validation", () => {
       dateStr: "2026-05-20",
       heureStr: "10:00",
       dureeMinutes: 60,
-      dispo: dispo({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" }),
+      dispos: [plage({ date_jour: "2026-05-20", heure_debut: "09:00:00", heure_fin: "18:00:00" })],
       indispos: [],
       conflictingReservations: [
         {

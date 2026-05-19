@@ -218,9 +218,15 @@ export function ReservationForm() {
     [prestations, selectedPrestation]
   );
 
+  // Index : Map<dateStr, DisponibiliteSpecifique[]> — toutes les plages actives du jour
   const dispoMap = useMemo(() => {
-    const m = new Map<string, DisponibiliteSpecifique>();
-    dispos.forEach((d) => m.set(d.date_jour, d));
+    const m = new Map<string, DisponibiliteSpecifique[]>();
+    dispos.forEach((d) => {
+      if (!d.actif) return;
+      const arr = m.get(d.date_jour) || [];
+      arr.push(d);
+      m.set(d.date_jour, arr);
+    });
     return m;
   }, [dispos]);
 
@@ -232,8 +238,8 @@ export function ReservationForm() {
       if (isSameDay(date, today)) return false;
       const ds = dateToStr(date);
       if (isDateInIndispo(ds, indispos)) return false;
-      const dispo = dispoMap.get(ds);
-      return !!(dispo && dispo.actif);
+      const plages = dispoMap.get(ds);
+      return !!(plages && plages.length > 0);
     },
     [dispoMap, indispos]
   );
@@ -243,7 +249,7 @@ export function ReservationForm() {
     const ds = dateToStr(selectedDate);
     return generateSlots({
       dateStr: ds,
-      dispo: dispoMap.get(ds),
+      dispos: dispoMap.get(ds) || [],
       dureeMinutes: prestation.duree_minutes,
       battementMinutes: battement,
       indispos,
@@ -283,7 +289,7 @@ export function ReservationForm() {
       const ds = dateToStr(day);
       const slotsForDay = generateSlots({
         dateStr: ds,
-        dispo: dispoMap.get(ds),
+        dispos: dispoMap.get(ds) || [],
         dureeMinutes: prestation.duree_minutes,
         battementMinutes: battement,
         indispos,

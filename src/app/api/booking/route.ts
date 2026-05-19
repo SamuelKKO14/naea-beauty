@@ -51,13 +51,12 @@ export async function POST(request: Request) {
 
     // --- VALIDATION STRICTE DU CRÉNEAU (server-side) ---
     // On ne fait JAMAIS confiance au client : on revérifie tout côté serveur.
+    // Multi-plages : on récupère TOUTES les plages du jour.
     const [dispoRes, indispoRes, confirmedRes] = await Promise.all([
       supabase
         .from("disponibilites_specifiques")
         .select("*")
-        .eq("date_jour", date_rdv)
-        .limit(1)
-        .maybeSingle(),
+        .eq("date_jour", date_rdv),
       supabase
         .from("indisponibilites")
         .select("date_debut, date_fin")
@@ -71,15 +70,15 @@ export async function POST(request: Request) {
         .eq("acompte_paye", true),
     ]);
 
-    const dispo = (dispoRes.data as DisponibiliteSpecifique | null) ?? undefined;
+    const dispos = (dispoRes.data as DisponibiliteSpecifique[]) || [];
     const indispos = (indispoRes.data as Pick<Indisponibilite, "date_debut" | "date_fin">[]) || [];
     const confirmedReservations = confirmedRes.data || [];
 
     console.log("=== SLOT VALIDATION INPUT ===", JSON.stringify({
       date_rdv,
       heure_rdv,
-      hasDispo: !!dispo,
-      dispoActif: dispo?.actif,
+      plagesCount: dispos.length,
+      plagesActives: dispos.filter((d) => d.actif).length,
       indisposCount: indispos.length,
       confirmedCount: confirmedReservations.length,
     }));
@@ -88,7 +87,7 @@ export async function POST(request: Request) {
       dateStr: date_rdv,
       heureStr: heure_rdv,
       dureeMinutes: prestation.duree_minutes,
-      dispo,
+      dispos,
       indispos,
       conflictingReservations: confirmedReservations,
       nowDateStr: dateToStr(new Date()),
