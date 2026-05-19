@@ -9,7 +9,6 @@ import {
   Clock,
   Users,
   Sparkles,
-  MessageSquareQuote,
   Settings,
   Wallet,
   X,
@@ -21,7 +20,6 @@ const NAV = [
   { href: "/admin/disponibilites", label: "Disponibilités", icon: Clock },
   { href: "/admin/clients", label: "Clients", icon: Users },
   { href: "/admin/prestations", label: "Prestations", icon: Sparkles },
-  { href: "/admin/temoignages", label: "Témoignages", icon: MessageSquareQuote },
   { href: "/admin/finance", label: "Finance", icon: Wallet },
   { href: "/admin/parametres", label: "Paramètres", icon: Settings },
 ];

@@ -37,6 +37,15 @@ type ReservationRow = Reservation & {
   prestation_name: string;
 };
 
+function formatReceived(iso: string): string {
+  const d = new Date(iso);
+  const dd = d.getDate().toString().padStart(2, "0");
+  const mm = (d.getMonth() + 1).toString().padStart(2, "0");
+  const hh = d.getHours().toString().padStart(2, "0");
+  const mi = d.getMinutes().toString().padStart(2, "0");
+  return `${dd}/${mm} à ${hh}h${mi}`;
+}
+
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<ReservationRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,8 +62,7 @@ export default function ReservationsPage() {
     let query = supabase
       .from("reservations")
       .select("*, client:clients(prenom, nom, email, telephone), prestation:prestations(nom)")
-      .order("date_rdv", { ascending: false })
-      .order("heure_rdv", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (filterStatut !== "tous") {
       query = query.eq("statut", filterStatut);
@@ -220,7 +228,8 @@ export default function ReservationsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs font-medium uppercase text-gray-500">
-                <th className="px-5 py-3">Date</th>
+                <th className="px-5 py-3">Reçu le</th>
+                <th className="px-5 py-3">Date RDV</th>
                 <th className="px-5 py-3">Heure</th>
                 <th className="px-5 py-3">Cliente</th>
                 <th className="px-5 py-3">Prestation</th>
@@ -232,14 +241,14 @@ export default function ReservationsPage() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-gray-400">
+                  <td colSpan={8} className="px-5 py-8 text-center text-gray-400">
                     Chargement…
                   </td>
                 </tr>
               )}
               {!loading && reservations.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-8 text-center text-gray-400">
+                  <td colSpan={8} className="px-5 py-8 text-center text-gray-400">
                     Aucune réservation
                   </td>
                 </tr>
@@ -250,6 +259,9 @@ export default function ReservationsPage() {
                   onClick={() => openDetail(r)}
                   className="cursor-pointer border-b border-gray-50 transition-colors hover:bg-gray-50 last:border-0"
                 >
+                  <td className="whitespace-nowrap px-5 py-3 text-xs text-gray-500">
+                    {formatReceived(r.created_at)}
+                  </td>
                   <td className="whitespace-nowrap px-5 py-3 text-gray-700">
                     {new Date(r.date_rdv).toLocaleDateString("fr-FR")}
                   </td>

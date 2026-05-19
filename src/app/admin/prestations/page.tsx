@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
-import { Save, X } from "lucide-react";
+import { Plus, Save, X } from "lucide-react";
 import type { Prestation } from "@/lib/types";
 
 const CATEGORIES: Record<string, string> = {
@@ -15,6 +15,7 @@ export default function PrestationsPage() {
   const [prestations, setPrestations] = useState<Prestation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Prestation | null>(null);
+  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
     nom: "",
     description: "",
@@ -24,7 +25,63 @@ export default function PrestationsPage() {
     actif: true,
   });
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const supabase = createClient();
+
+  function flash(kind: "ok" | "err", msg: string) {
+    setToast({ kind, msg });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  function resetForm() {
+    setForm({
+      nom: "",
+      description: "",
+      categorie: "cils",
+      prix: "",
+      duree_minutes: "",
+      actif: true,
+    });
+  }
+
+  function openCreate() {
+    resetForm();
+    setSelected(null);
+    setCreating(true);
+  }
+
+  function closeModal() {
+    setSelected(null);
+    setCreating(false);
+  }
+
+  async function createPrestation() {
+    if (!form.nom || !form.prix || !form.duree_minutes) {
+      flash("err", "Nom, prix et durée sont obligatoires.");
+      return;
+    }
+    setSaving(true);
+    // Trouver l'ordre max pour positionner la nouvelle à la fin
+    const maxOrdre = prestations.reduce((m, p) => Math.max(m, p.ordre ?? 0), 0);
+    const { error } = await supabase.from("prestations").insert({
+      nom: form.nom,
+      description: form.description || null,
+      categorie: form.categorie,
+      prix: parseFloat(form.prix),
+      duree_minutes: parseInt(form.duree_minutes),
+      actif: form.actif,
+      ordre: maxOrdre + 1,
+    });
+    setSaving(false);
+    if (error) {
+      console.error("[createPrestation]", error);
+      flash("err", `Erreur : ${error.message}`);
+      return;
+    }
+    closeModal();
+    await load();
+    flash("ok", "Prestation créée.");
+  }
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -71,9 +128,31 @@ export default function PrestationsPage() {
     load();
   }
 
+  const showModal = !!selected || creating;
+  const modalTitle = creating ? "Nouvelle prestation" : "Modifier la prestation";
+
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-white">Prestations</h2>
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${
+            toast.kind === "ok" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.msg}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold text-white">Prestations</h2>
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-bordeaux-800"
+        >
+          <Plus size={16} />
+          Ajouter une prestation
+        </button>
+      </div>
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -125,16 +204,16 @@ export default function PrestationsPage() {
         </div>
       </div>
 
-      {/* Modale édition */}
-      {selected && (
+      {/* Modale création / édition */}
+      {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Modifier la prestation
+                {modalTitle}
               </h3>
               <button
-                onClick={() => setSelected(null)}
+                onClick={closeModal}
                 className="rounded p-1 text-gray-400 hover:text-gray-600"
               >
                 <X size={20} />
@@ -228,18 +307,18 @@ export default function PrestationsPage() {
 
             <div className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
               <button
-                onClick={() => setSelected(null)}
+                onClick={closeModal}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Annuler
               </button>
               <button
-                onClick={savePrestation}
+                onClick={creating ? createPrestation : savePrestation}
                 disabled={saving}
                 className="flex items-center gap-1.5 rounded-lg bg-bordeaux-700 px-4 py-2 text-sm font-medium text-white hover:bg-bordeaux-800 disabled:opacity-50"
               >
                 <Save size={14} />
-                {saving ? "Sauvegarde…" : "Sauvegarder"}
+                {saving ? "Sauvegarde…" : creating ? "Créer" : "Sauvegarder"}
               </button>
             </div>
           </div>
