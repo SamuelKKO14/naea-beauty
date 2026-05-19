@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Calendar, Check, ChevronLeft, ChevronRight, Clock, Copy, CreditCard, X } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import type { Prestation, DisponibiliteSpecifique, Indisponibilite } from "@/lib/types";
+import {
+  dateToStr,
+  generateSlots,
+  isDateInIndispo,
+  parseTimeStart,
+} from "@/lib/availability";
 
 type BookedSlot = {
   date_rdv: string;
@@ -33,11 +39,6 @@ const MOIS_LABELS = [
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ];
 
-function parseTime(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + (m || 0);
-}
-
 function formatTime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -46,10 +47,6 @@ function formatTime(minutes: number): string {
 
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function dateToStr(d: Date) {
-  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
 }
 
 export function ReservationForm() {
@@ -139,15 +136,6 @@ export function ReservationForm() {
     return m;
   }, [dispos]);
 
-  // --- Is date indisponible ---
-  const isIndispo = useCallback(
-    (date: Date) => {
-      const ds = dateToStr(date);
-      return indispos.some((i) => ds >= i.date_debut && ds <= i.date_fin);
-    },
-    [indispos]
-  );
-
   // --- Is date available (base check, without fully-booked) ---
   const isDateBaseAvailable = useCallback(
     (date: Date) => {
@@ -155,44 +143,27 @@ export function ReservationForm() {
       today.setHours(0, 0, 0, 0);
       if (date < today) return false;
       if (isSameDay(date, today)) return false;
-      if (isIndispo(date)) return false;
-      return dispoMap.has(dateToStr(date));
+      const ds = dateToStr(date);
+      if (isDateInIndispo(ds, indispos)) return false;
+      const dispo = dispoMap.get(ds);
+      return !!(dispo && dispo.actif);
     },
-    [dispoMap, isIndispo]
+    [dispoMap, indispos]
   );
 
   // --- Générer les créneaux pour la date sélectionnée ---
   const slots = useMemo(() => {
     if (!selectedDate || !prestation) return [];
-    const dispo = dispoMap.get(dateToStr(selectedDate));
-    if (!dispo) return [];
-
-    const debut = parseTime(dispo.heure_debut);
-    const fin = parseTime(dispo.heure_fin);
-    const duree = prestation.duree_minutes;
-    const step = duree + battement;
     const dateStr = dateToStr(selectedDate);
-
-    // Réservations ce jour-là
-    const dayRes = reservations.filter((r) => r.date_rdv === dateStr);
-
-    const result: string[] = [];
-    for (let t = debut; t + duree <= fin; t += step) {
-      const slotStr = `${Math.floor(t / 60).toString().padStart(2, "0")}:${(t % 60).toString().padStart(2, "0")}`;
-
-      // Vérifier chevauchement avec réservations existantes
-      const conflict = dayRes.some((r) => {
-        const rStart = parseTime(r.heure_rdv);
-        const rDuree = r.prestation?.[0]?.duree_minutes || 60;
-        const rEnd = rStart + rDuree;
-        const slotEnd = t + duree;
-        return t < rEnd && slotEnd > rStart;
-      });
-
-      if (!conflict) result.push(slotStr);
-    }
-    return result;
-  }, [selectedDate, prestation, dispoMap, reservations, battement]);
+    return generateSlots({
+      dateStr,
+      dispo: dispoMap.get(dateStr),
+      dureeMinutes: prestation.duree_minutes,
+      battementMinutes: battement,
+      indispos,
+      bookedSlots: reservations,
+    });
+  }, [selectedDate, prestation, dispoMap, reservations, battement, indispos]);
 
   // Reset slot when date or prestation changes
   useEffect(() => {
@@ -222,40 +193,26 @@ export function ReservationForm() {
     return days;
   }, [calMonth]);
 
-  // --- Dates entièrement réservées (tous les créneaux pris par confirmées+payées) ---
+  // --- Dates entièrement réservées (zéro slot libre) ---
   const fullyBookedDates = useMemo(() => {
     if (!prestation) return new Set<string>();
     const booked = new Set<string>();
-    const duree = prestation.duree_minutes;
-
     for (const day of calDays) {
       if (!day) continue;
       if (!isDateBaseAvailable(day)) continue;
-      const dispo = dispoMap.get(dateToStr(day));
-      if (!dispo) continue;
-
-      const debut = parseTime(dispo.heure_debut);
-      const fin = parseTime(dispo.heure_fin);
-      const step = duree + battement;
-      const dateStr = dateToStr(day);
-      const dayRes = reservations.filter((r) => r.date_rdv === dateStr);
-
-      if (dayRes.length === 0) continue; // Pas de réservation = pas full
-
-      let allTaken = true;
-      for (let t = debut; t + duree <= fin; t += step) {
-        const conflict = dayRes.some((r) => {
-          const rStart = parseTime(r.heure_rdv);
-          const rDuree = r.prestation?.[0]?.duree_minutes || 60;
-          const rEnd = rStart + rDuree;
-          return t < rEnd && (t + duree) > rStart;
-        });
-        if (!conflict) { allTaken = false; break; }
-      }
-      if (allTaken) booked.add(dateStr);
+      const ds = dateToStr(day);
+      const slotsForDay = generateSlots({
+        dateStr: ds,
+        dispo: dispoMap.get(ds),
+        dureeMinutes: prestation.duree_minutes,
+        battementMinutes: battement,
+        indispos,
+        bookedSlots: reservations,
+      });
+      if (slotsForDay.length === 0) booked.add(ds);
     }
     return booked;
-  }, [prestation, calDays, isDateBaseAvailable, dispoMap, reservations, battement]);
+  }, [prestation, calDays, isDateBaseAvailable, dispoMap, reservations, battement, indispos]);
 
   // --- Is date available (final, includes fully-booked check) ---
   const isDateAvailable = useCallback(
@@ -356,7 +313,7 @@ export function ReservationForm() {
                 day: "numeric",
                 month: "long",
               })}{" "}
-              à {formatTime(parseTime(selectedSlot))}
+              à {formatTime(parseTimeStart(selectedSlot))}
             </dd>
             <dt className="text-bordeaux-900/60">Lieu</dt>
             <dd className="text-bordeaux-900">
@@ -563,7 +520,7 @@ export function ReservationForm() {
                       : "border-bordeaux-200 text-bordeaux-900 hover:border-or-300 hover:bg-or-50"
                   }`}
                 >
-                  {formatTime(parseTime(slot))}
+                  {formatTime(parseTimeStart(slot))}
                 </button>
               ))}
             </div>
@@ -683,7 +640,7 @@ export function ReservationForm() {
               day: "numeric",
               month: "long",
             })}{" "}
-            à {formatTime(parseTime(selectedSlot))} —{" "}
+            à {formatTime(parseTimeStart(selectedSlot))} —{" "}
             {lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}
           </p>
         </div>

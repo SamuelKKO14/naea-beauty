@@ -4,6 +4,8 @@ import {
   demandeReservationClienteHTML,
   nouvelleReservationAdminHTML,
 } from "@/lib/email-templates";
+import { validateSlot, dateToStr } from "@/lib/availability";
+import type { DisponibiliteSpecifique, Indisponibilite } from "@/lib/types";
 
 export async function POST(request: Request) {
   console.log("=== BOOKING API CALLED ===");
@@ -45,22 +47,56 @@ export async function POST(request: Request) {
       return Response.json({ error: "Prestation introuvable ou inactive." }, { status: 400 });
     }
 
-    // --- Vérifier si créneau pris par une réservation confirmée+payée ---
     const emailNorm = email.trim().toLowerCase();
-    const { data: confirmed } = await supabase
-      .from("reservations")
-      .select("id")
-      .eq("date_rdv", date_rdv)
-      .eq("heure_rdv", heure_rdv)
-      .in("statut", ["confirmee", "realisee"])
-      .eq("acompte_paye", true)
-      .limit(1);
 
-    console.log("=== CONFIRMED SLOT CHECK ===", JSON.stringify(confirmed));
+    // --- VALIDATION STRICTE DU CRÉNEAU (server-side) ---
+    // On ne fait JAMAIS confiance au client : on revérifie tout côté serveur.
+    const [dispoRes, indispoRes, confirmedRes] = await Promise.all([
+      supabase
+        .from("disponibilites_specifiques")
+        .select("*")
+        .eq("date_jour", date_rdv)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("indisponibilites")
+        .select("date_debut, date_fin")
+        .lte("date_debut", date_rdv)
+        .gte("date_fin", date_rdv),
+      supabase
+        .from("reservations")
+        .select("date_rdv, heure_rdv, prestation:prestations(duree_minutes)")
+        .eq("date_rdv", date_rdv)
+        .in("statut", ["confirmee", "realisee"])
+        .eq("acompte_paye", true),
+    ]);
 
-    if (confirmed && confirmed.length > 0) {
-      console.log("=== SLOT TAKEN BY CONFIRMED+PAID ===");
-      return Response.json({ error: "Ce créneau n'est plus disponible." }, { status: 409 });
+    const dispo = (dispoRes.data as DisponibiliteSpecifique | null) ?? undefined;
+    const indispos = (indispoRes.data as Pick<Indisponibilite, "date_debut" | "date_fin">[]) || [];
+    const confirmedReservations = confirmedRes.data || [];
+
+    console.log("=== SLOT VALIDATION INPUT ===", JSON.stringify({
+      date_rdv,
+      heure_rdv,
+      hasDispo: !!dispo,
+      dispoActif: dispo?.actif,
+      indisposCount: indispos.length,
+      confirmedCount: confirmedReservations.length,
+    }));
+
+    const validation = validateSlot({
+      dateStr: date_rdv,
+      heureStr: heure_rdv,
+      dureeMinutes: prestation.duree_minutes,
+      dispo,
+      indispos,
+      conflictingReservations: confirmedReservations,
+      nowDateStr: dateToStr(new Date()),
+    });
+
+    if (!validation.ok) {
+      console.log("=== SLOT VALIDATION FAILED ===", validation.reason);
+      return Response.json({ error: validation.reason }, { status: 409 });
     }
 
     // --- Vérifier doublon exact : même email + date + heure (en_attente) ---

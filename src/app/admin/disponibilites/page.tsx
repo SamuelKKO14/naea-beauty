@@ -62,6 +62,12 @@ export default function DisponibilitesPage() {
   const [modalDebut, setModalDebut] = useState("09:00");
   const [modalFin, setModalFin] = useState("19:00");
   const [modalSaving, setModalSaving] = useState(false);
+  const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  function flash(kind: "ok" | "err", msg: string) {
+    setToast({ kind, msg });
+    setTimeout(() => setToast(null), 3500);
+  }
 
   const supabase = createClient();
 
@@ -136,34 +142,50 @@ export default function DisponibilitesPage() {
   // --- Save day dispo ---
   async function saveDay() {
     if (!modalDate) return;
+    if (modalDispo && modalDebut >= modalFin && modalFin !== "00:00") {
+      flash("err", "L'heure de fin doit être après l'heure de début.");
+      return;
+    }
     setModalSaving(true);
     const ds = dateToStr(modalDate);
     const existing = dispoSpecMap.get(ds);
 
+    console.log("[saveDay]", { ds, existingId: existing?.id, modalDispo, modalDebut, modalFin });
+
+    let error;
     if (modalDispo) {
       if (existing) {
-        await supabase.from("disponibilites_specifiques").update({
+        ({ error } = await supabase.from("disponibilites_specifiques").update({
           heure_debut: modalDebut,
           heure_fin: modalFin,
           actif: true,
-        }).eq("id", existing.id);
+        }).eq("id", existing.id));
       } else {
-        await supabase.from("disponibilites_specifiques").insert({
+        ({ error } = await supabase.from("disponibilites_specifiques").insert({
           date_jour: ds,
           heure_debut: modalDebut,
           heure_fin: modalFin,
           actif: true,
-        });
+        }));
       }
-    } else {
-      if (existing) {
-        await supabase.from("disponibilites_specifiques").update({ actif: false }).eq("id", existing.id);
-      }
+    } else if (existing) {
+      ({ error } = await supabase
+        .from("disponibilites_specifiques")
+        .update({ actif: false })
+        .eq("id", existing.id));
+    }
+
+    if (error) {
+      console.error("[saveDay] error", error);
+      flash("err", `Erreur d'enregistrement : ${error.message}`);
+      setModalSaving(false);
+      return;
     }
 
     await load();
     setModalSaving(false);
     setModalDate(null);
+    flash("ok", "Disponibilité enregistrée.");
   }
 
   // --- Delete day dispo ---
@@ -172,22 +194,41 @@ export default function DisponibilitesPage() {
     const ds = dateToStr(modalDate);
     const existing = dispoSpecMap.get(ds);
     if (existing) {
-      await supabase.from("disponibilites_specifiques").delete().eq("id", existing.id);
+      const { error } = await supabase
+        .from("disponibilites_specifiques")
+        .delete()
+        .eq("id", existing.id);
+      if (error) {
+        console.error("[deleteDay] error", error);
+        flash("err", `Erreur lors de la suppression : ${error.message}`);
+        return;
+      }
       await load();
+      flash("ok", "Disponibilité supprimée.");
     }
     setModalDate(null);
   }
 
+  // Détermine la semaine cible : si on regarde le mois courant → semaine de "aujourd'hui",
+  // sinon → première semaine du mois affiché (jour 1).
+  function targetWeekDays(): Date[] {
+    const today = new Date();
+    const sameMonth =
+      today.getFullYear() === calMonth.getFullYear() &&
+      today.getMonth() === calMonth.getMonth();
+    const ref = sameMonth ? today : new Date(calMonth.getFullYear(), calMonth.getMonth(), 1);
+    return getWeekDays(ref);
+  }
+
   // --- Apply default week ---
   async function applyDefaultWeek() {
-    const today = new Date();
-    const weekDays = getWeekDays(today.getDate() === today.getDate() ? new Date(calMonth.getFullYear(), calMonth.getMonth(), Math.max(1, today.getDate())) : calMonth);
+    const weekDays = targetWeekDays();
+    const todayCheck = new Date();
+    todayCheck.setHours(0, 0, 0, 0);
 
     const inserts: { date_jour: string; heure_debut: string; heure_fin: string; actif: boolean }[] = [];
     for (const day of weekDays) {
       const ds = dateToStr(day);
-      const todayCheck = new Date();
-      todayCheck.setHours(0, 0, 0, 0);
       if (day < todayCheck) continue;
       if (isIndispo(ds)) continue;
 
@@ -203,28 +244,37 @@ export default function DisponibilitesPage() {
       }
     }
 
-    if (inserts.length > 0) {
-      await supabase.from("disponibilites_specifiques").upsert(inserts, { onConflict: "date_jour" });
-      await load();
+    if (inserts.length === 0) {
+      flash("err", "Aucun horaire hebdo à appliquer pour cette semaine.");
+      return;
     }
+    const { error } = await supabase
+      .from("disponibilites_specifiques")
+      .upsert(inserts, { onConflict: "date_jour" });
+    if (error) {
+      console.error("[applyDefaultWeek]", error);
+      flash("err", `Erreur : ${error.message}`);
+      return;
+    }
+    await load();
+    flash("ok", `${inserts.length} jour(s) configuré(s).`);
   }
 
   // --- Copy previous week ---
   async function copyPrevWeek() {
-    const today = new Date();
-    const currentWeek = getWeekDays(new Date(calMonth.getFullYear(), calMonth.getMonth(), Math.max(1, today.getDate())));
+    const currentWeek = targetWeekDays();
     const prevWeek = currentWeek.map((d) => {
       const prev = new Date(d);
       prev.setDate(d.getDate() - 7);
       return prev;
     });
 
+    const todayCheck = new Date();
+    todayCheck.setHours(0, 0, 0, 0);
     const inserts: { date_jour: string; heure_debut: string; heure_fin: string; actif: boolean }[] = [];
     for (let i = 0; i < 7; i++) {
       const prevDs = dateToStr(prevWeek[i]);
       const curDs = dateToStr(currentWeek[i]);
-      const todayCheck = new Date();
-      todayCheck.setHours(0, 0, 0, 0);
       if (currentWeek[i] < todayCheck) continue;
 
       const prevSpec = dispoSpecMap.get(prevDs);
@@ -238,19 +288,38 @@ export default function DisponibilitesPage() {
       }
     }
 
-    if (inserts.length > 0) {
-      await supabase.from("disponibilites_specifiques").upsert(inserts, { onConflict: "date_jour" });
-      await load();
+    if (inserts.length === 0) {
+      flash("err", "Aucune dispo trouvée la semaine précédente.");
+      return;
     }
+    const { error } = await supabase
+      .from("disponibilites_specifiques")
+      .upsert(inserts, { onConflict: "date_jour" });
+    if (error) {
+      console.error("[copyPrevWeek]", error);
+      flash("err", `Erreur : ${error.message}`);
+      return;
+    }
+    await load();
+    flash("ok", `${inserts.length} jour(s) copié(s).`);
   }
 
   // --- Block entire week ---
   async function blockWeek() {
-    const today = new Date();
-    const weekDays = getWeekDays(new Date(calMonth.getFullYear(), calMonth.getMonth(), Math.max(1, today.getDate())));
+    if (!confirm("Bloquer toute la semaine ? Les dispos existantes seront supprimées.")) return;
+    const weekDays = targetWeekDays();
     const dates = weekDays.map(dateToStr);
-    await supabase.from("disponibilites_specifiques").delete().in("date_jour", dates);
+    const { error } = await supabase
+      .from("disponibilites_specifiques")
+      .delete()
+      .in("date_jour", dates);
+    if (error) {
+      console.error("[blockWeek]", error);
+      flash("err", `Erreur : ${error.message}`);
+      return;
+    }
     await load();
+    flash("ok", "Semaine bloquée.");
   }
 
   // --- Indisponibilités ---
@@ -277,14 +346,21 @@ export default function DisponibilitesPage() {
 
   async function saveDispos() {
     setSaving(true);
+    let firstError: string | null = null;
     for (const d of dispos) {
-      await supabase.from("disponibilites").update({
+      const { error } = await supabase.from("disponibilites").update({
         heure_debut: d.heure_debut,
         heure_fin: d.heure_fin,
         actif: d.actif,
       }).eq("id", d.id);
+      if (error && !firstError) firstError = error.message;
     }
     setSaving(false);
+    if (firstError) {
+      flash("err", `Erreur : ${firstError}`);
+    } else {
+      flash("ok", "Horaires hebdo enregistrés.");
+    }
   }
 
   if (loading) {
@@ -301,6 +377,18 @@ export default function DisponibilitesPage() {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-white">Disponibilités</h2>
+
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm font-medium shadow-lg ${
+            toast.kind === "ok"
+              ? "bg-green-600 text-white"
+              : "bg-red-600 text-white"
+          }`}
+        >
+          {toast.msg}
+        </div>
+      )}
 
       {/* ── CALENDRIER MENSUEL ── */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
