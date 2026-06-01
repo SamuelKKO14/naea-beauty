@@ -780,7 +780,6 @@ export function ReservationForm() {
                       <div className="rounded-lg bg-bordeaux-50/50 p-3 text-xs">
                         <p><span className="text-bordeaux-900/60">Titulaire :</span> <strong>Amina Saydoullayeva</strong></p>
                         <p className="mt-1"><span className="text-bordeaux-900/60">IBAN :</span> <strong className="font-mono">FR76 2983 3000 0100 0003 5775 278</strong></p>
-                        <p className="mt-1"><span className="text-bordeaux-900/60">BIC :</span> <strong className="font-mono">TRZOFR21XXX</strong></p>
                         <p className="mt-1"><span className="text-bordeaux-900/60">Montant :</span> <strong>{bookingResult.montant_acompte} €</strong></p>
                         <p className="mt-1"><span className="text-bordeaux-900/60">Référence :</span> <strong className="font-mono">NAEA-{shortId}</strong></p>
                       </div>
