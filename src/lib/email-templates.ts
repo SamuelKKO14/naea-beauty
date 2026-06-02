@@ -84,11 +84,18 @@ type ConfirmationData = {
   lieu: string;
   montant_total: number;
   montant_acompte: number;
+  prestation_prix?: number;
+  supplement?: number;
   consignes_pre_soin: string | null;
 };
 
 export function confirmationClienteHTML(data: ConfirmationData): string {
   const reste = data.montant_total - data.montant_acompte;
+  const supplementRow =
+    data.supplement && data.supplement > 0
+      ? infoRow("Prestation", formatPrice(data.prestation_prix ?? data.montant_total - data.supplement)) +
+        infoRow("Supplément domicile", "+ " + formatPrice(data.supplement))
+      : "";
 
   const consignesBlock = data.consignes_pre_soin
     ? `<div style="margin:24px 0;padding:20px;background-color:${CREAM};border-left:4px solid ${OR};border-radius:6px;">
@@ -106,6 +113,7 @@ export function confirmationClienteHTML(data: ConfirmationData): string {
       ${infoRow("Date", formatDate(data.date_rdv))}
       ${infoRow("Heure", data.heure_rdv.slice(0, 5))}
       ${infoRow("Lieu", formatLieu(data.lieu))}
+      ${supplementRow}
       ${infoRow("Montant total", formatPrice(data.montant_total))}
       ${infoRow("Acompte versé", formatPrice(data.montant_acompte))}
       ${infoRow("Reste à payer", formatPrice(reste))}
@@ -135,6 +143,8 @@ type AdminNotifData = {
   telephone: string;
   prestation_nom: string;
   prestation_prix: number;
+  supplement?: number;
+  montant_total?: number;
   date_rdv: string;
   heure_rdv: string;
   lieu: string;
@@ -144,6 +154,11 @@ type AdminNotifData = {
 };
 
 export function nouvelleReservationAdminHTML(data: AdminNotifData): string {
+  const hasSupplement = !!(data.supplement && data.supplement > 0);
+  const supplementRows = hasSupplement
+    ? infoRow("Supplément domicile", "+ " + formatPrice(data.supplement!)) +
+      infoRow("Montant total", formatPrice(data.montant_total ?? data.prestation_prix + data.supplement!))
+    : "";
   const notesBlock = data.notes_client
     ? `<div style="margin:20px 0;padding:16px;background-color:${CREAM};border-radius:8px;border:1px solid ${OR_CLAIR};">
         <p style="margin:0 0 6px;font-weight:700;font-size:13px;color:${BORDEAUX_800};opacity:0.7;">Message de la cliente</p>
@@ -161,6 +176,7 @@ export function nouvelleReservationAdminHTML(data: AdminNotifData): string {
       ${infoRow("Téléphone", data.telephone)}
       ${infoRow("Prestation", data.prestation_nom)}
       ${infoRow("Prix", formatPrice(data.prestation_prix))}
+      ${supplementRows}
       ${infoRow("Date", formatDate(data.date_rdv))}
       ${infoRow("Heure", data.heure_rdv.slice(0, 5))}
       ${infoRow("Lieu", formatLieu(data.lieu))}
@@ -186,12 +202,21 @@ type DemandeData = {
   date_rdv: string;
   heure_rdv: string;
   lieu: string;
+  prestation_prix?: number;
+  supplement?: number;
+  montant_total?: number;
   montant_acompte: number;
   paypal_email: string | null;
   iban: string | null;
 };
 
 export function demandeReservationClienteHTML(data: DemandeData): string {
+  const hasSupplement = !!(data.supplement && data.supplement > 0);
+  const recapMontants = hasSupplement
+    ? infoRow("Prestation", formatPrice(data.prestation_prix ?? 0)) +
+      infoRow("Supplément domicile", "+ " + formatPrice(data.supplement!)) +
+      infoRow("Montant total", formatPrice(data.montant_total ?? (data.prestation_prix ?? 0) + data.supplement!))
+    : "";
   let paiementBlock = "";
 
   if (data.paypal_email || data.iban) {
@@ -219,6 +244,7 @@ export function demandeReservationClienteHTML(data: DemandeData): string {
       ${infoRow("Date", formatDate(data.date_rdv))}
       ${infoRow("Heure", data.heure_rdv.slice(0, 5))}
       ${infoRow("Lieu", formatLieu(data.lieu))}
+      ${recapMontants}
     </table>
 
     <p style="margin:0 0 16px;">Pour confirmer votre rendez-vous, merci de verser l'acompte de <strong>${formatPrice(data.montant_acompte)}</strong> par PayPal ou virement bancaire.</p>

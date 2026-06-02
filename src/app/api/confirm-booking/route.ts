@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     // Récupérer la réservation avec client + prestation
     const { data: reservation } = await supabase
       .from("reservations")
-      .select("*, client:clients(prenom, email), prestation:prestations(nom)")
+      .select("*, client:clients(prenom, email), prestation:prestations(nom, prix)")
       .eq("id", reservation_id)
       .single();
 
@@ -48,6 +48,9 @@ export async function POST(request: Request) {
     const clientEmail = (reservation.client as any)?.email;
     const clientPrenom = (reservation.client as any)?.prenom;
     const prestationNom = (reservation.prestation as any)?.nom;
+    const prestationPrix = Number((reservation.prestation as { nom?: string; prix?: number } | null)?.prix ?? 0);
+    // Supplément = écart entre total facturé et prix prestation (>0 uniquement si domicile)
+    const supplement = Math.max(0, Number(reservation.montant_total) - prestationPrix);
 
     console.log("=== CONFIRM: clientEmail:", clientEmail, "clientPrenom:", clientPrenom, "===");
 
@@ -64,6 +67,8 @@ export async function POST(request: Request) {
       lieu: reservation.lieu,
       montant_total: reservation.montant_total,
       montant_acompte: reservation.montant_acompte,
+      prestation_prix: prestationPrix,
+      supplement,
       consignes_pre_soin: paramConsignes?.valeur || null,
     });
 

@@ -164,16 +164,24 @@ export async function POST(request: Request) {
       client_id = newClient.id;
     }
 
-    // --- Récupérer le pourcentage d'acompte ---
-    const { data: paramAcompte } = await supabase
+    // --- Récupérer le pourcentage d'acompte ET le supplément domicile ---
+    const { data: paramsCalc } = await supabase
       .from("parametres")
-      .select("valeur")
-      .eq("cle", "acompte_pourcentage")
-      .single();
+      .select("cle, valeur")
+      .in("cle", ["acompte_pourcentage", "supplement_domicile"]);
 
-    const acomptePct = paramAcompte ? parseInt(paramAcompte.valeur, 10) : 50;
-    const montant_total = prestation.prix;
-    const montant_acompte = Math.round((montant_total * acomptePct) / 100);
+    const calc: Record<string, string> = {};
+    for (const p of paramsCalc || []) calc[p.cle] = p.valeur;
+
+    const acomptePct = calc.acompte_pourcentage ? parseInt(calc.acompte_pourcentage, 10) : 50;
+    const supplementDomicile = calc.supplement_domicile ? parseFloat(calc.supplement_domicile) : 5;
+
+    // Le supplément n'est appliqué QUE si le lieu est "domicile" (calcul serveur, jamais le client).
+    const supplement = lieu === "domicile" ? supplementDomicile : 0;
+    const prestation_prix = prestation.prix;
+    const montant_total = prestation_prix + supplement;
+    // Acompte en centimes (arrondi au centime), pas à l'entier.
+    const montant_acompte = Math.round(montant_total * acomptePct) / 100;
 
     // --- Créer la réservation ---
     const { data: reservation, error: resError } = await supabase
@@ -237,6 +245,9 @@ export async function POST(request: Request) {
           date_rdv,
           heure_rdv,
           lieu,
+          prestation_prix,
+          supplement,
+          montant_total,
           montant_acompte,
           paypal_email: params.paypal_email || null,
           iban: params.iban || null,
@@ -266,7 +277,9 @@ export async function POST(request: Request) {
             email: emailNorm,
             telephone: telephone.trim(),
             prestation_nom: prestation.nom,
-            prestation_prix: prestation.prix,
+            prestation_prix,
+            supplement,
+            montant_total,
             date_rdv,
             heure_rdv,
             lieu,
@@ -289,6 +302,8 @@ export async function POST(request: Request) {
       reservation_id: reservation.id,
       montant_total,
       montant_acompte,
+      prestation_prix,
+      supplement,
       emailResults: {
         clientEmail: clientEmailResult,
         clientEmailError: clientEmailError ? String(clientEmailError) : null,

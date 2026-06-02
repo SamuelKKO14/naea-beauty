@@ -41,6 +41,8 @@ type BookingResult = {
   reservation_id: string;
   montant_total: number;
   montant_acompte: number;
+  prestation_prix?: number;
+  supplement?: number;
 };
 
 const inputClass =
@@ -58,6 +60,10 @@ function formatTime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}h${m.toString().padStart(2, "0")}`;
+}
+
+function formatPrice(n: number): string {
+  return Number(n).toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -139,6 +145,7 @@ export function ReservationForm() {
   const [indispos, setIndispos] = useState<Indisponibilite[]>([]);
   const [reservations, setReservations] = useState<BookedSlot[]>([]);
   const [battement, setBattement] = useState(30);
+  const [supplementDomicile, setSupplementDomicile] = useState(5);
 
   // Form state
   const [selectedPrestation, setSelectedPrestation] = useState<string>("");
@@ -177,11 +184,14 @@ export function ReservationForm() {
       const [presRes, indispoRes, paramRes] = await Promise.all([
         supabase.from("prestations").select("*").eq("actif", true).order("ordre"),
         supabase.from("indisponibilites").select("*"),
-        supabase.from("parametres").select("valeur").eq("cle", "battement_minutes").single(),
+        supabase.from("parametres").select("cle, valeur").in("cle", ["battement_minutes", "supplement_domicile"]),
       ]);
       setPrestations(presRes.data || []);
       setIndispos(indispoRes.data || []);
-      if (paramRes.data) setBattement(parseInt(paramRes.data.valeur, 10) || 30);
+      for (const p of paramRes.data || []) {
+        if (p.cle === "battement_minutes") setBattement(parseInt(p.valeur, 10) || 30);
+        if (p.cle === "supplement_domicile") setSupplementDomicile(parseFloat(p.valeur) || 5);
+      }
     }
     load();
   }, []);
@@ -217,6 +227,12 @@ export function ReservationForm() {
     () => prestations.find((p) => p.id === selectedPrestation),
     [prestations, selectedPrestation]
   );
+
+  // --- Calcul prix en temps réel (le serveur reste la source de vérité) ---
+  const supplementActif = lieu === "domicile" ? supplementDomicile : 0;
+  const prixPrestation = prestation?.prix ?? 0;
+  const totalEstime = prixPrestation + supplementActif;
+  const acompteEstime = totalEstime / 2;
 
   // Index : Map<dateStr, DisponibiliteSpecifique[]> — toutes les plages actives du jour
   const dispoMap = useMemo(() => {
@@ -346,6 +362,8 @@ export function ReservationForm() {
         reservation_id: data.reservation_id,
         montant_total: data.montant_total,
         montant_acompte: data.montant_acompte,
+        prestation_prix: data.prestation_prix,
+        supplement: data.supplement,
       });
       setStatus("success");
       setDirection(1);
@@ -648,6 +666,31 @@ export function ReservationForm() {
                   </div>
                 </fieldset>
 
+                {prestation && (
+                  <div className="rounded-lg border border-or-200 bg-or-50/50 px-4 py-3">
+                    <dl className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <dt className="text-bordeaux-900/70">Prestation : {prestation.nom}</dt>
+                        <dd className="text-bordeaux-900">{formatPrice(prixPrestation)}</dd>
+                      </div>
+                      {supplementActif > 0 && (
+                        <div className="flex justify-between">
+                          <dt className="text-bordeaux-900/70">Supplément domicile</dt>
+                          <dd className="text-bordeaux-900">+ {formatPrice(supplementActif)}</dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-or-200 pt-1">
+                        <dt className="font-medium text-bordeaux-900">Total</dt>
+                        <dd className="font-medium text-bordeaux-900">{formatPrice(totalEstime)}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-bordeaux-900/70">Acompte (50%)</dt>
+                        <dd className="font-semibold text-or-700">{formatPrice(acompteEstime)}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                )}
+
                 <div>
                   <label className={labelClass}>Message (optionnel)</label>
                   <textarea
@@ -724,7 +767,7 @@ export function ReservationForm() {
                 </h3>
                 <p className="mt-2 text-sm text-bordeaux-900/70">
                   Pour confirmer, versez l&apos;acompte de{" "}
-                  <strong>{bookingResult.montant_acompte} €</strong>
+                  <strong>{formatPrice(bookingResult.montant_acompte)}</strong>
                 </p>
               </div>
 
@@ -741,10 +784,18 @@ export function ReservationForm() {
                   </dd>
                   <dt className="text-bordeaux-900/60">Lieu</dt>
                   <dd className="text-bordeaux-900">{lieu === "chez_naea" ? "Chez Naéa" : "À domicile"}</dd>
+                  {bookingResult.supplement && bookingResult.supplement > 0 ? (
+                    <>
+                      <dt className="text-bordeaux-900/60">Prestation</dt>
+                      <dd className="text-bordeaux-900">{formatPrice(bookingResult.prestation_prix ?? bookingResult.montant_total - bookingResult.supplement)}</dd>
+                      <dt className="text-bordeaux-900/60">Supplément domicile</dt>
+                      <dd className="text-bordeaux-900">+ {formatPrice(bookingResult.supplement)}</dd>
+                    </>
+                  ) : null}
                   <dt className="text-bordeaux-900/60">Montant total</dt>
-                  <dd className="text-bordeaux-900">{bookingResult.montant_total} €</dd>
+                  <dd className="text-bordeaux-900">{formatPrice(bookingResult.montant_total)}</dd>
                   <dt className="text-bordeaux-900/60">Acompte (50%)</dt>
-                  <dd className="font-semibold text-bordeaux-900">{bookingResult.montant_acompte} €</dd>
+                  <dd className="font-semibold text-bordeaux-900">{formatPrice(bookingResult.montant_acompte)}</dd>
                 </dl>
               </div>
 
@@ -753,7 +804,7 @@ export function ReservationForm() {
                 <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
                   <h4 className="text-sm font-semibold text-bordeaux-900">PayPal</h4>
                   <a
-                    href={`https://paypal.me/NAEABEAUTY/${bookingResult.montant_acompte}`}
+                    href={`https://paypal.me/NAEABEAUTY/${bookingResult.montant_acompte.toFixed(2)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-or-500 px-6 py-3 text-sm font-semibold text-bordeaux-950 shadow-md transition-all hover:shadow-lg hover:shadow-or-500/30"
@@ -762,7 +813,7 @@ export function ReservationForm() {
                     Payer par PayPal
                   </a>
                   <p className="mt-3 text-xs text-bordeaux-900/60">
-                    Envoyez {bookingResult.montant_acompte} € et indiquez votre nom en message
+                    Envoyez {formatPrice(bookingResult.montant_acompte)} et indiquez votre nom en message
                   </p>
                 </div>
                 <div className="rounded-xl border border-bordeaux-100 bg-white p-5">
@@ -780,7 +831,7 @@ export function ReservationForm() {
                       <div className="rounded-lg bg-bordeaux-50/50 p-3 text-xs">
                         <p><span className="text-bordeaux-900/60">Titulaire :</span> <strong>Amina Saydoullayeva</strong></p>
                         <p className="mt-1"><span className="text-bordeaux-900/60">IBAN :</span> <strong className="font-mono">FR76 2983 3000 0100 0003 5775 278</strong></p>
-                        <p className="mt-1"><span className="text-bordeaux-900/60">Montant :</span> <strong>{bookingResult.montant_acompte} €</strong></p>
+                        <p className="mt-1"><span className="text-bordeaux-900/60">Montant :</span> <strong>{formatPrice(bookingResult.montant_acompte)}</strong></p>
                         <p className="mt-1"><span className="text-bordeaux-900/60">Référence :</span> <strong className="font-mono">NAEA-{shortId}</strong></p>
                       </div>
                       <button
