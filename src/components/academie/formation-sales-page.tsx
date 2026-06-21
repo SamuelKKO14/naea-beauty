@@ -3,18 +3,47 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BookOpen,
+  CalendarCheck,
   Check,
+  ClipboardList,
+  Droplets,
+  FlaskConical,
   Gift,
   Infinity as InfinityIcon,
+  type LucideIcon,
   Lock,
+  MessageCircle,
   Plus,
+  Scale,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Star,
+  Users,
+  Wrench,
 } from "lucide-react";
 import { formatEuros } from "@/lib/format";
+import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 import { AnimatedSection } from "./animated-section";
 import { BoutonCommande } from "./bouton-commande";
+
+/** Icône lucide cohérente avec le thème d'un module (par mots-clés du titre). */
+function iconForModule(titre: string): LucideIcon {
+  const t = titre.toLowerCase();
+  if (/technique|introduction|découv|présentation de la technique/.test(t)) return BookOpen;
+  if (/hygiène|salubrité|désinfect|stéril/.test(t)) return Droplets;
+  if (/réglementaire|obligation|légal|loi|norme/.test(t)) return Scale;
+  if (/contre-indication|indication/.test(t)) return ShieldAlert;
+  if (/précaution|sécurité/.test(t)) return ShieldCheck;
+  if (/composition|kit|caractéristique/.test(t)) return FlaskConical;
+  if (/matériel|équipement|outil/.test(t)) return Wrench;
+  if (/préparation|préparer|protocole|étape/.test(t)) return ClipboardList;
+  if (/accueil|accueillir|offre/.test(t)) return Users;
+  if (/conseil|conseiller/.test(t)) return MessageCircle;
+  if (/suivi|suivre|fidélis|après/.test(t)) return CalendarCheck;
+  return Sparkles;
+}
 
 /** Données minimales lues côté serveur (jamais contenu_url / contenu_texte). */
 export type FormationData = {
@@ -199,7 +228,8 @@ export function FormationSalesPage({
           </p>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3">
+        {/* MOBILE — liste verticale (inchangée). */}
+        <div className="mx-auto mt-10 grid max-w-3xl grid-cols-1 gap-3 md:hidden">
           {modules.map((m, i) => (
             <motion.div
               key={m.id}
@@ -231,6 +261,45 @@ export function FormationSalesPage({
               </div>
             </motion.div>
           ))}
+        </div>
+
+        {/* DESKTOP (md+) — grille de cartes ~carrées, 2 puis 3 par ligne. */}
+        <div className="mt-10 hidden grid-cols-2 gap-4 md:grid lg:grid-cols-3 md:gap-6">
+          {modules.map((m, i) => {
+            const Icon = iconForModule(m.titre);
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.3) }}
+                className="flex h-full flex-col rounded-2xl border border-or-300/30 bg-white/70 p-6 shadow-sm backdrop-blur-sm transition-shadow hover:shadow-xl hover:shadow-or-400/15"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="grid h-12 w-12 place-items-center rounded-full bg-or-100 text-bordeaux-900">
+                    <Icon size={20} />
+                  </span>
+                  <Lock
+                    size={15}
+                    className="text-bordeaux-600/50"
+                    aria-label="Contenu verrouillé"
+                  />
+                </div>
+                <p className="mt-5 text-[10px] uppercase tracking-[0.18em] text-bordeaux-600">
+                  Module {i + 1}
+                </p>
+                <h3 className="mt-1 font-display text-lg leading-snug text-bordeaux-900">
+                  {m.titre}
+                </h3>
+                {m.description ? (
+                  <p className="mt-2 text-sm leading-relaxed text-bordeaux-900/70">
+                    {m.description}
+                  </p>
+                ) : null}
+              </motion.div>
+            );
+          })}
         </div>
       </AnimatedSection>
 
@@ -319,40 +388,24 @@ export function FormationSalesPage({
         </div>
       </AnimatedSection>
 
-      {/* 6. AVIS (placeholder) -------------------------------------------- */}
+      {/* 6. AVIS — vrais avis clientes (prestations en cabine), cadrage honnête */}
       <AnimatedSection
         id="avis"
         className="mx-auto max-w-7xl px-6 py-14 lg:px-10 md:py-20"
       >
         <div className="mx-auto max-w-2xl text-center">
-          <span className={KICKER}>Elles ont suivi la formation</span>
-          <h2 className={HEADING}>Avis</h2>
+          <span className={KICKER}>Ses clientes en parlent</span>
+          <h2 className={HEADING}>Ce que disent ses clientes</h2>
           <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-            {/* PLACEHOLDER — vrais témoignages à intégrer. */}
-            Témoignages à venir.
+            Ce sont les retours de ses <strong>clientes en institut</strong>, sur
+            ses prestations — pas des élèves de la formation. La meilleure preuve
+            qu&apos;elle maîtrise au quotidien la technique qu&apos;elle vous
+            transmet.
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 md:gap-6">
-          {[1, 2, 3].map((n) => (
-            <article
-              key={n}
-              className="flex flex-col rounded-2xl border border-or-300/30 bg-white/70 p-6 shadow-sm backdrop-blur-sm"
-            >
-              <div className="flex gap-1 text-or-500">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={14} fill="currentColor" strokeWidth={0} />
-                ))}
-              </div>
-              <p className="mt-4 flex-1 text-sm leading-relaxed text-bordeaux-900/70">
-                « [Avis à compléter] — Formation claire et complète, j&apos;ai pu
-                proposer la prestation rapidement. »
-              </p>
-              <p className="mt-4 font-display text-sm text-bordeaux-900">
-                Prénom N.
-              </p>
-            </article>
-          ))}
+        <div className="mt-8">
+          <TestimonialsCarousel />
         </div>
       </AnimatedSection>
 
