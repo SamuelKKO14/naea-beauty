@@ -3,45 +3,59 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertTriangle,
   BookOpen,
   CalendarCheck,
   Check,
   ClipboardList,
   Droplets,
+  Eye,
   FlaskConical,
   Gift,
   Infinity as InfinityIcon,
+  ListChecks,
   type LucideIcon,
   Lock,
   MessageCircle,
+  Palette,
   Plus,
   Scale,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Star,
+  Stethoscope,
   Users,
   Wrench,
 } from "lucide-react";
 import { formatEuros } from "@/lib/format";
+import { checkoutUrlForSlug } from "@/lib/gumroad";
 import { TestimonialsCarousel } from "@/components/testimonials-carousel";
 import { AnimatedSection } from "./animated-section";
 import { BoutonCommande } from "./bouton-commande";
 
-/** Icône lucide cohérente avec le thème d'un module (par mots-clés du titre). */
+/** Icône lucide cohérente avec le thème d'un module (par mots-clés du titre).
+ *  Ordre important : on teste du plus spécifique au plus générique. Couvre les
+ *  thèmes du blanchiment ET du rehaussement de cils. */
 function iconForModule(titre: string): LucideIcon {
   const t = titre.toLowerCase();
-  if (/technique|introduction|découv|présentation de la technique/.test(t)) return BookOpen;
-  if (/hygiène|salubrité|désinfect|stéril/.test(t)) return Droplets;
+  if (/introduction|présentation de la technique/.test(t)) return BookOpen;
+  if (/anatomie|cycle/.test(t)) return Eye;
+  if (/étape par étape|pas à pas/.test(t)) return ListChecks;
+  if (/diagnostic/.test(t)) return Stethoscope;
+  if (/teinture|coloration/.test(t)) return Palette;
+  if (/lotion/.test(t)) return Droplets;
   if (/réglementaire|obligation|légal|loi|norme/.test(t)) return Scale;
   if (/contre-indication|indication/.test(t)) return ShieldAlert;
   if (/précaution|sécurité/.test(t)) return ShieldCheck;
   if (/composition|kit|caractéristique/.test(t)) return FlaskConical;
-  if (/matériel|équipement|outil/.test(t)) return Wrench;
-  if (/préparation|préparer|protocole|étape/.test(t)) return ClipboardList;
+  if (/matériel|équipement|outil|produit/.test(t)) return Wrench;
+  if (/préparation|préparer|protocole/.test(t)) return ClipboardList;
+  if (/hygiène|salubrité|désinfect|stéril|poste/.test(t)) return Droplets;
   if (/accueil|accueillir|offre/.test(t)) return Users;
   if (/conseil|conseiller/.test(t)) return MessageCircle;
-  if (/suivi|suivre|fidélis|après/.test(t)) return CalendarCheck;
+  if (/suivi|suivre|fidélis|post-prestation|après/.test(t)) return CalendarCheck;
+  if (/erreur|éviter|entretien/.test(t)) return AlertTriangle;
   return Sparkles;
 }
 
@@ -61,7 +75,7 @@ export type FormationData = {
 export type ModuleData = {
   id: string;
   titre: string;
-  description: string | null;
+  description?: string | null;
   ordre: number;
 };
 
@@ -82,6 +96,7 @@ export function FormationSalesPage({
     ? formation.prix_lancement_cents!
     : formation.prix_cents;
   const prixLabel = formatEuros(prixAffiche);
+  const checkoutUrl = checkoutUrlForSlug(formation.slug);
 
   return (
     <div className="bg-cream">
@@ -145,7 +160,7 @@ export function FormationSalesPage({
 
             <div className="mt-8 flex justify-center">
               <BoutonCommande
-                formationSlug={formation.slug}
+                checkoutUrl={checkoutUrl}
                 prixLabel={prixLabel}
               />
             </div>
@@ -179,7 +194,7 @@ export function FormationSalesPage({
               icon: Sparkles,
               titre: "Une nouvelle prestation",
               texte:
-                "Maîtrisez le blanchiment cosmétique de A à Z et proposez-le en toute confiance.",
+                "Maîtrisez la prestation de A à Z et proposez-la en toute confiance.",
             },
             {
               icon: Star,
@@ -253,11 +268,6 @@ export function FormationSalesPage({
                     aria-label="Contenu verrouillé"
                   />
                 </div>
-                {m.description ? (
-                  <p className="mt-1 text-sm leading-relaxed text-bordeaux-900/70">
-                    {m.description}
-                  </p>
-                ) : null}
               </div>
             </motion.div>
           ))}
@@ -292,11 +302,6 @@ export function FormationSalesPage({
                 <h3 className="mt-1 font-display text-lg leading-snug text-bordeaux-900">
                   {m.titre}
                 </h3>
-                {m.description ? (
-                  <p className="mt-2 text-sm leading-relaxed text-bordeaux-900/70">
-                    {m.description}
-                  </p>
-                ) : null}
               </motion.div>
             );
           })}
@@ -327,8 +332,8 @@ export function FormationSalesPage({
             },
             {
               icon: Gift,
-              titre: "Modèle de consentement éclairé",
-              texte: "Un document prêt à l'emploi offert en bonus.",
+              titre: "Ressources prêtes à l'emploi",
+              texte: "Fiches et modèles pour vous lancer sereinement.",
             },
             {
               icon: InfinityIcon,
@@ -433,7 +438,7 @@ export function FormationSalesPage({
           </div>
           <div className="mt-8 flex justify-center">
             <BoutonCommande
-              formationSlug={formation.slug}
+              checkoutUrl={checkoutUrl}
               prixLabel={prixLabel}
             />
           </div>
@@ -460,7 +465,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Est-ce légal ? Quel est le cadre réglementaire ?",
-    a: "La formation couvre précisément le cadre réglementaire du blanchiment dentaire cosmétique et vous apprend à réaliser la prestation avec des produits conformes, en toute conformité.",
+    a: "La formation couvre le cadre réglementaire ainsi que les règles d'hygiène et de sécurité de la prestation, et vous apprend à travailler avec des produits conformes, en toute conformité.",
   },
   {
     q: "Puis-je me rétracter ?",

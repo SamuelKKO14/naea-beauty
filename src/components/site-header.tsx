@@ -66,6 +66,16 @@ export function SiteHeader() {
               {item.label}
             </a>
           ))}
+          <Link
+            href="/academie"
+            className={`text-sm font-medium transition-colors ${
+              scrolled
+                ? "text-white/80 hover:text-white"
+                : "text-or-100/80 hover:text-or-100"
+            }`}
+          >
+            Académie
+          </Link>
           <a
             href="#reserver"
             className="rounded-full bg-bordeaux-800 px-5 py-2.5 text-sm font-medium text-or-100 transition-all hover:bg-bordeaux-700 hover:shadow-lg hover:shadow-bordeaux-800/20"
@@ -96,6 +106,13 @@ export function SiteHeader() {
                 {item.label}
               </a>
             ))}
+            <Link
+              href="/academie"
+              onClick={handleNavClick}
+              className="rounded-lg px-3 py-2.5 text-base font-medium text-or-100 hover:bg-bordeaux-900"
+            >
+              Académie
+            </Link>
             <a
               href="#reserver"
               onClick={handleNavClick}

@@ -27,9 +27,11 @@ async function getFormation(slug: string) {
     .maybeSingle();
   if (error || !formation) return null;
 
+  // On ne sélectionne PAS `description` : les pages n'affichent que les titres
+  // de modules (on ne dévoile pas le contenu de la formation).
   const { data: modules } = await supabase
     .from("modules")
-    .select("id, titre, description, ordre")
+    .select("id, titre, ordre")
     .eq("formation_id", formation.id)
     .order("ordre", { ascending: true });
 
