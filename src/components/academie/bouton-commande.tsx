@@ -6,12 +6,13 @@ import { ArrowRight, Clock } from "lucide-react";
 /**
  * <BoutonCommande /> — CTA d'achat.
  *
- * Redirection simple vers le checkout Gumroad de la formation : Gumroad gère le
- * paiement ET la livraison. Aucune intégration paiement côté site.
- * Si `checkoutUrl` est absent, le bouton s'affiche désactivé (« Bientôt
- * disponible »).
+ * Ouvre le checkout Gumroad de la formation EN OVERLAY, en mode produit unique
+ * (`data-gumroad-single-product="true"`) : seul ce produit est présenté, jamais
+ * un panier groupé avec d'autres formations. Le script `gumroad.js` est chargé
+ * une seule fois par la page de vente (voir FormationSalesPage).
  *
- * Style repris à l'identique du `ShimmerButton` du site (bouton or + shimmer).
+ * Si `checkoutUrl` est absent, le bouton s'affiche désactivé (« Bientôt
+ * disponible »). Aucune intégration paiement côté site (pas de PayPal).
  */
 export function BoutonCommande({
   checkoutUrl,
@@ -40,9 +41,11 @@ export function BoutonCommande({
   return (
     <motion.a
       href={checkoutUrl}
+      // Overlay Gumroad, produit unique : empêche tout panier groupé.
+      className={`gumroad-button group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-xs font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-shadow hover:shadow-xl hover:shadow-or-500/40 ${className}`}
+      data-gumroad-single-product="true"
       whileHover={{ scale: 1.06 }}
       whileTap={{ scale: 0.97 }}
-      className={`group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full bg-or-500 px-8 py-4 text-xs font-semibold uppercase tracking-wider text-bordeaux-950 shadow-lg shadow-or-500/20 transition-shadow hover:shadow-xl hover:shadow-or-500/40 ${className}`}
     >
       <span className="pointer-events-none absolute inset-0 animate-shimmer-gold bg-gradient-to-r from-transparent via-white/40 to-transparent" />
       <span className="relative z-10 flex items-center gap-2">

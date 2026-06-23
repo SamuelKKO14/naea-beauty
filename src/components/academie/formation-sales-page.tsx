@@ -28,9 +28,13 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import Script from "next/script";
 import { formatEuros } from "@/lib/format";
 import { checkoutUrlForSlug } from "@/lib/gumroad";
-import { TestimonialsCarousel } from "@/components/testimonials-carousel";
+import {
+  getTestimonialsForFormation,
+  TestimonialsCarousel,
+} from "@/components/testimonials-carousel";
 import { AnimatedSection } from "./animated-section";
 import { BoutonCommande } from "./bouton-commande";
 
@@ -97,9 +101,18 @@ export function FormationSalesPage({
     : formation.prix_cents;
   const prixLabel = formatEuros(prixAffiche);
   const checkoutUrl = checkoutUrlForSlug(formation.slug);
+  // Avis RÉELS filtrés par formation (aucun avis inventé). Vide => section masquée.
+  const avis = getTestimonialsForFormation(formation.slug);
 
   return (
     <div className="bg-cream">
+      {/* Script overlay Gumroad — chargé une seule fois (dédupliqué par next/script). */}
+      {checkoutUrl ? (
+        <Script
+          src="https://gumroad.com/js/gumroad.js"
+          strategy="afterInteractive"
+        />
+      ) : null}
       {/* 1. HERO ------------------------------------------------------------ */}
       <section className="relative overflow-hidden bg-bordeaux-950 text-white">
         {/* lueur or discrète */}
@@ -361,60 +374,31 @@ export function FormationSalesPage({
         </div>
       </AnimatedSection>
 
-      {/* 5. L'EXPERTE (placeholder) --------------------------------------- */}
-      <AnimatedSection
-        id="experte"
-        className="mx-auto max-w-7xl px-6 py-14 lg:px-10 md:py-20"
-      >
-        <div className="mx-auto grid max-w-4xl grid-cols-1 items-center gap-8 md:grid-cols-2 md:gap-12">
-          {/* Emplacement photo (à fournir) */}
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-xs overflow-hidden rounded-3xl border border-or-300/40 bg-gradient-to-br from-bordeaux-950 to-bordeaux-900">
-            <div className="absolute inset-0 grid place-items-center text-center">
-              <span className="px-6 text-xs uppercase tracking-[0.22em] text-or-300/70">
-                Photo de l&apos;experte
-                <br />à venir
-              </span>
-            </div>
-          </div>
-          <div>
-            <span className={KICKER}>L&apos;experte</span>
-            <h2 className={HEADING}>La personne derrière la formation</h2>
+      {/* 5. AVIS — vrais avis clientes filtrés par formation. Section masquée
+          s'il n'y a aucun avis réel pour cette formation (aucun avis inventé). */}
+      {avis.length > 0 ? (
+        <AnimatedSection
+          id="avis"
+          className="mx-auto max-w-7xl px-6 py-14 lg:px-10 md:py-20"
+        >
+          <div className="mx-auto max-w-2xl text-center">
+            <span className={KICKER}>Ses clientes en parlent</span>
+            <h2 className={HEADING}>Ce que disent ses clientes</h2>
             <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-              {/* PLACEHOLDER — contenu réel à fournir par la cliente. */}
-              [Présentation de l&apos;experte à compléter : parcours, expérience
-              en institut, nombre de prestations réalisées, pourquoi elle a créé
-              cette formation.] Naéa partage ici un savoir-faire concret, testé en
-              cabine, pour vous transmettre une prestation maîtrisée.
-            </p>
-            <p className="mt-4 text-xs uppercase tracking-[0.2em] text-bordeaux-600">
-              Naéa Beauty · Nantes
+              Ce sont les retours de ses <strong>clientes en institut</strong>,
+              sur ses prestations — pas des élèves de la formation. La meilleure
+              preuve qu&apos;elle maîtrise au quotidien la technique qu&apos;elle
+              vous transmet.
             </p>
           </div>
-        </div>
-      </AnimatedSection>
 
-      {/* 6. AVIS — vrais avis clientes (prestations en cabine), cadrage honnête */}
-      <AnimatedSection
-        id="avis"
-        className="mx-auto max-w-7xl px-6 py-14 lg:px-10 md:py-20"
-      >
-        <div className="mx-auto max-w-2xl text-center">
-          <span className={KICKER}>Ses clientes en parlent</span>
-          <h2 className={HEADING}>Ce que disent ses clientes</h2>
-          <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
-            Ce sont les retours de ses <strong>clientes en institut</strong>, sur
-            ses prestations — pas des élèves de la formation. La meilleure preuve
-            qu&apos;elle maîtrise au quotidien la technique qu&apos;elle vous
-            transmet.
-          </p>
-        </div>
+          <div className="mt-8">
+            <TestimonialsCarousel items={avis} />
+          </div>
+        </AnimatedSection>
+      ) : null}
 
-        <div className="mt-8">
-          <TestimonialsCarousel />
-        </div>
-      </AnimatedSection>
-
-      {/* 7. FAQ ------------------------------------------------------------ */}
+      {/* 6. FAQ ------------------------------------------------------------ */}
       <FaqAcademie />
 
       {/* 8. CTA FINAL ------------------------------------------------------ */}
@@ -457,7 +441,7 @@ export function FormationSalesPage({
 const FAQ_ITEMS = [
   {
     q: "Quand ai-je accès à la formation ?",
-    a: "Dès la validation de votre paiement, l'accès est immédiat : vous recevez vos identifiants et pouvez commencer tout de suite.",
+    a: "Dès la validation de votre paiement, l'accès et le livret PDF vous sont envoyés automatiquement par email via Gumroad — vous pouvez commencer tout de suite. Aucun espace membre ni identifiant à créer.",
   },
   {
     q: "Quel est le format ?",

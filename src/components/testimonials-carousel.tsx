@@ -5,7 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star } from "lucide-react";
 
 /* ── Témoignages ─────────────────────────────────────── */
-const TESTIMONIALS = [
+export type Testimonial = {
+  id: number;
+  name: string;
+  service: string;
+  stars: number;
+  text: string;
+};
+
+const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
     name: "Inès L.",
@@ -99,8 +107,25 @@ const TESTIMONIALS = [
   },
 ];
 
+/**
+ * Avis réels filtrés par thème de formation (aucun avis inventé).
+ * - slug "…cils…"        → avis mentionnant les cils
+ * - slug "…blanchiment…" → avis mentionnant le blanchiment
+ * Renvoie [] si aucun avis réel ne correspond (la page masque alors la section).
+ * Sans slug reconnu → tous les avis (usage page d'accueil).
+ */
+export function getTestimonialsForFormation(slug: string): Testimonial[] {
+  const s = slug.toLowerCase();
+  let re: RegExp | null = null;
+  if (s.includes("cils")) re = /cils/i;
+  else if (s.includes("blanchiment")) re = /blanchiment/i;
+  if (!re) return TESTIMONIALS;
+  return TESTIMONIALS.filter((t) => re.test(t.service));
+}
+
 /* ── Composant principal ──────────────────────────────── */
-export function TestimonialsCarousel() {
+export function TestimonialsCarousel({ items }: { items?: Testimonial[] } = {}) {
+  const data = items && items.length > 0 ? items : TESTIMONIALS;
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -116,13 +141,13 @@ export function TestimonialsCarousel() {
 
   const next = useCallback(() => {
     setDirection(1);
-    setActive((p) => (p + 1) % TESTIMONIALS.length);
-  }, []);
+    setActive((p) => (p + 1) % data.length);
+  }, [data.length]);
 
   const prev = useCallback(() => {
     setDirection(-1);
-    setActive((p) => (p - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
-  }, []);
+    setActive((p) => (p - 1 + data.length) % data.length);
+  }, [data.length]);
 
   /* Auto-play */
   useEffect(() => {
@@ -153,7 +178,7 @@ export function TestimonialsCarousel() {
     }
   }
 
-  const t = TESTIMONIALS[active];
+  const t = data[active] ?? data[0];
 
   const variants = {
     enter: (d: number) => ({ x: d > 0 ? 120 : -120, opacity: 0, scale: 0.92 }),
@@ -214,7 +239,7 @@ export function TestimonialsCarousel() {
 
       {/* Dots */}
       <div className="mt-8 flex items-center justify-center gap-2">
-        {TESTIMONIALS.map((_, i) => (
+        {data.map((_, i) => (
           <button
             key={i}
             onClick={() => interact(() => goTo(i))}
