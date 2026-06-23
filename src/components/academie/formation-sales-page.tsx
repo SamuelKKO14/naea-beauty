@@ -12,6 +12,7 @@ import {
   Eye,
   FlaskConical,
   Gift,
+  Heart,
   Infinity as InfinityIcon,
   ListChecks,
   type LucideIcon,
@@ -19,12 +20,14 @@ import {
   MessageCircle,
   Palette,
   Plus,
+  Rocket,
   Scale,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Star,
   Stethoscope,
+  Target,
   Users,
   Wrench,
 } from "lucide-react";
@@ -86,6 +89,101 @@ export type ModuleData = {
 const HEADING = "mt-3 font-display text-2xl text-bordeaux-900 md:text-3xl";
 const KICKER = "text-xs uppercase tracking-[0.22em] text-bordeaux-600";
 
+/** Section « Pourquoi cette formation ? » — contenu orienté bénéfice, par formation. */
+type PourquoiPoint = { icon: LucideIcon; titre: string; texte: string };
+type PourquoiContent = { intro: string; points: PourquoiPoint[]; closing: string };
+
+const POURQUOI_CLOSING =
+  "Pas seulement un geste technique : une méthode complète et clé en main, accessible à vie, pour pratiquer en confiance.";
+
+const POURQUOI: Record<string, PourquoiContent> = {
+  "blanchiment-dentaire-cosmetique": {
+    intro:
+      "Que vous partiez de zéro ou que vous soyez déjà dans l'esthétique, cette formation vous donne tout pour proposer le blanchiment dentaire cosmétique — une prestation très demandée — en toute autonomie.",
+    points: [
+      {
+        icon: Target,
+        titre: "Maîtriser la technique de A à Z",
+        texte: "Du diagnostic au résultat, rien laissé au hasard.",
+      },
+      {
+        icon: ShieldCheck,
+        titre: "Travailler en sécurité et en conformité",
+        texte:
+          "Hygiène, contre-indications et cadre réglementaire européen respectés.",
+      },
+      {
+        icon: Rocket,
+        titre: "Lancer ou enrichir votre activité",
+        texte: "En institut, à domicile ou en indépendante.",
+      },
+      {
+        icon: Heart,
+        titre: "Fidéliser vos clientes",
+        texte: "Accueil, conseil et suivi pour qu'elles reviennent.",
+      },
+    ],
+    closing: POURQUOI_CLOSING,
+  },
+  "rehaussement-de-cils": {
+    intro:
+      "Que vous partiez de zéro ou que vous soyez déjà dans l'esthétique, cette formation vous donne tout pour proposer le rehaussement de cils — une prestation très demandée — en toute autonomie.",
+    points: [
+      {
+        icon: Target,
+        titre: "Maîtriser la technique de A à Z",
+        texte: "Du diagnostic du cil au résultat final, étape par étape.",
+      },
+      {
+        icon: ShieldCheck,
+        titre: "Travailler en sécurité",
+        texte:
+          "Anatomie, contre-indications, hygiène et temps de pose maîtrisés.",
+      },
+      {
+        icon: Rocket,
+        titre: "Lancer ou enrichir votre activité",
+        texte: "En institut, à domicile ou en indépendante.",
+      },
+      {
+        icon: Heart,
+        titre: "Fidéliser vos clientes",
+        texte: "Conseil et entretien post-prestation pour un résultat durable.",
+      },
+    ],
+    closing: POURQUOI_CLOSING,
+  },
+};
+
+/** Contenu générique de repli si le slug n'est pas répertorié. */
+const POURQUOI_GENERIC: PourquoiContent = {
+  intro:
+    "Que vous partiez de zéro ou que vous soyez déjà dans l'esthétique, cette formation vous donne tout pour proposer cette prestation — très demandée — en toute autonomie.",
+  points: [
+    {
+      icon: Target,
+      titre: "Maîtriser la technique de A à Z",
+      texte: "Du diagnostic au résultat, rien laissé au hasard.",
+    },
+    {
+      icon: ShieldCheck,
+      titre: "Travailler en sécurité et en conformité",
+      texte: "Hygiène, contre-indications et cadre réglementaire respectés.",
+    },
+    {
+      icon: Rocket,
+      titre: "Lancer ou enrichir votre activité",
+      texte: "En institut, à domicile ou en indépendante.",
+    },
+    {
+      icon: Heart,
+      titre: "Fidéliser vos clientes",
+      texte: "Accueil, conseil et suivi pour qu'elles reviennent.",
+    },
+  ],
+  closing: POURQUOI_CLOSING,
+};
+
 export function FormationSalesPage({
   formation,
   modules,
@@ -103,6 +201,7 @@ export function FormationSalesPage({
   const checkoutUrl = checkoutUrlForSlug(formation.slug);
   // Avis RÉELS filtrés par formation (aucun avis inventé). Vide => section masquée.
   const avis = getTestimonialsForFormation(formation.slug);
+  const pourquoi = POURQUOI[formation.slug] ?? POURQUOI_GENERIC;
 
   return (
     <div className="bg-cream">
@@ -374,7 +473,51 @@ export function FormationSalesPage({
         </div>
       </AnimatedSection>
 
-      {/* 5. AVIS — vrais avis clientes filtrés par formation. Section masquée
+      {/* 5. POURQUOI CETTE FORMATION — orienté bénéfice (remplace l'ancienne
+          section "L'experte"). Contenu propre à chaque formation. */}
+      <AnimatedSection
+        id="pourquoi"
+        className="mx-auto max-w-7xl px-6 py-14 lg:px-10 md:py-20"
+      >
+        <div className="mx-auto max-w-2xl text-center">
+          <span className={KICKER}>La formation</span>
+          <h2 className={HEADING}>Pourquoi cette formation&nbsp;?</h2>
+          <p className="mt-5 text-sm leading-relaxed text-bordeaux-900/70">
+            {pourquoi.intro}
+          </p>
+        </div>
+
+        <p className="mx-auto mt-10 text-center text-xs uppercase tracking-[0.22em] text-bordeaux-600">
+          À la fin, vous saurez&nbsp;:
+        </p>
+
+        <div className="mx-auto mt-6 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-2">
+          {pourquoi.points.map((p) => (
+            <div
+              key={p.titre}
+              className="flex items-start gap-4 rounded-2xl border border-or-300/30 bg-white/70 p-5 shadow-sm backdrop-blur-sm"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-or-100 text-bordeaux-900">
+                <p.icon size={18} />
+              </span>
+              <div>
+                <h3 className="font-display text-base text-bordeaux-900">
+                  {p.titre}
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-bordeaux-900/70">
+                  {p.texte}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p className="mx-auto mt-8 max-w-2xl text-center text-sm italic leading-relaxed text-bordeaux-900/70">
+          {pourquoi.closing}
+        </p>
+      </AnimatedSection>
+
+      {/* 6. AVIS — vrais avis clientes filtrés par formation. Section masquée
           s'il n'y a aucun avis réel pour cette formation (aucun avis inventé). */}
       {avis.length > 0 ? (
         <AnimatedSection
@@ -398,7 +541,7 @@ export function FormationSalesPage({
         </AnimatedSection>
       ) : null}
 
-      {/* 6. FAQ ------------------------------------------------------------ */}
+      {/* 7. FAQ ------------------------------------------------------------ */}
       <FaqAcademie />
 
       {/* 8. CTA FINAL ------------------------------------------------------ */}
